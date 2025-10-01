@@ -2,6 +2,14 @@
 name: azd-template
 metadata:
   template: azd-template@0.0.1-beta
+
+# Infrastructure configuration
+infra:
+  provider: bicep
+  path: infra
+  module: main
+  parameters: main.parameters.json
+
 services:
   # Add your services here
   # Example for Container Apps:

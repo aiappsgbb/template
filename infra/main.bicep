@@ -12,6 +12,9 @@ param location string
 @description('Id of the user or app to assign application roles (optional)')
 param principalId string = ''
 
+@description('Whether the deployment is running in GitHub Actions')
+param githubActions bool = false
+
 // Optional parameters with defaults
 @description('Resource group name. If not provided, will be generated based on environment name.')
 param resourceGroupName string = ''
@@ -21,6 +24,7 @@ var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = {
   'azd-env-name': environmentName
+  'deployment-source': githubActions ? 'github-actions' : 'local'
 }
 
 // Resource Group
@@ -135,3 +139,5 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 output AZURE_RESOURCE_GROUP string = rg.name
+output AZURE_PRINCIPAL_ID string = principalId
+output GITHUB_ACTIONS bool = githubActions
