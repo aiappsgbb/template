@@ -144,6 +144,13 @@ ENV/
 env.bak/
 venv.bak/
 
+# Azure Developer CLI
+.azure/*/
+!.azure/README.md
+
+# Azure
+*.publishsettings
+
 # Spyder project settings
 .spyderproject
 .spyproject
