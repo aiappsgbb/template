@@ -71,4 +71,19 @@ Create a new Node.js/TypeScript application under the src folder with the follow
 
 9. Include proper ESLint and Prettier configuration
 
+10. Update Azure Developer CLI Configuration
+
+Update the root `azure.yaml` file to include the new Node.js application as a service:
+
+- Add a new service entry under the `services` section
+- Configure the service with:
+  - Service name matching the application directory name
+  - Language: js
+  - Host: containerapp
+  - Docker build context pointing to the application directory
+  - Environment variables for application configuration
+- Ensure proper service dependencies if needed
+- Configure resource group and location references
+- Add any required environment-specific configurations
+
 The application should be production-ready with proper TypeScript configuration, error handling, structured logging using Winston (never use console.log in production), and testing setup.

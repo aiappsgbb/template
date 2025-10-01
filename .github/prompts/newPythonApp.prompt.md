@@ -133,6 +133,21 @@ Include proper Python package structure with `__init__.py` files in:
 - Root application directory
 - utils/ directory (with config.py and tracing.py)
 
+### 10. Azure Developer CLI Configuration
+
+Update the root `azure.yaml` file to include the new Python application as a service:
+
+- Add a new service entry under the `services` section
+- Configure the service with:
+  - Service name matching the application directory name
+  - Language: python
+  - Host: containerapp
+  - Docker build context pointing to the application directory
+  - Environment variables for Azure Monitor integration
+- Ensure proper service dependencies if needed
+- Configure resource group and location references
+- Add any required environment-specific configurations
+
 ## Technical Requirements
 
 - Use modern Python 3.11+ features

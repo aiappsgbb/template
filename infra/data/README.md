@@ -1,0 +1,1 @@
+This folder is meant to contain any seeing data for storage/databases/etc.. to be loaded via AZD hooks scripts
