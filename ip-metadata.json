@@ -1,5 +1,5 @@
 {
-  "$schema": "./schemas/ip-metadata.schema.json",
+  "$schema": "./.github/ip-metadata.schema.json",
   "name": "Azure Template Project",
   "description": "A comprehensive Azure Developer CLI template for modern cloud applications with AI capabilities",
   "maturity": "Bronze",
