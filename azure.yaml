@@ -23,29 +23,32 @@ services:
   #   host: containerapp
 
 # Hooks allow you to run scripts at various points in the azd workflow
+# Using Python with uv for better dependency management
 hooks:
   # Runs before provisioning
-  # preprovision:
-  #   shell: pwsh
-  #   run: |
-  #     echo "Running pre-provision hook"
+  preprovision:
+    shell: pwsh
+    run: |
+      cd infra/scripts
+      uv run python preprovision.py
   
-  # Runs after provisioning - useful for importing container images
-  # postprovision:
-  #   shell: pwsh
-  #   run: |
-  #     echo "Running post-provision hook"
-  #     # Example: Import images to ACR
-  #     # az acr import --name myregistry --source mcr.microsoft.com/dotnet/aspnet:8.0 --image aspnet:8.0
+  # Runs after provisioning - useful for importing container images or setting up resources
+  postprovision:
+    shell: pwsh
+    run: |
+      cd infra/scripts
+      uv run python postprovision.py
   
   # Runs before deployment
-  # predeploy:
-  #   shell: pwsh
-  #   run: |
-  #     echo "Running pre-deploy hook"
+  predeploy:
+    shell: pwsh
+    run: |
+      cd infra/scripts
+      uv run python predeploy.py
   
-  # Runs after deployment
-  # postdeploy:
-  #   shell: pwsh
-  #   run: |
-  #     echo "Running post-deploy hook"
+  # Runs after deployment - useful for final configuration or notifications
+  postdeploy:
+    shell: pwsh
+    run: |
+      cd infra/scripts
+      uv run python postdeploy.py

@@ -153,6 +153,7 @@ template/
 - **Testing**: Unit, integration, and end-to-end tests
 - **Security**: SAST/DAST scanning, credential management
 - **Documentation**: Inline comments, README files, architecture diagrams
+- **Logging**: Use Python logging module, avoid print statements, structured logging with proper levels
 
 ## Agent Collaboration Patterns
 
@@ -209,6 +210,8 @@ template/
 - Security-first design principles
 - AI-powered application patterns
 - Multi-language development approaches
+- Structured logging with Python logging module
+- Proper exception handling with stack traces
 
 ### Anti-Patterns to Avoid
 
@@ -217,6 +220,8 @@ template/
 - Monolithic architectures
 - Insecure network configurations
 - Manual deployment processes
+- Using print() statements instead of logging module
+- Unstructured or missing error logging
 
 ### Learning Sources
 

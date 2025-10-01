@@ -30,7 +30,7 @@ Create a new Node.js/TypeScript application under the src folder with the follow
    - Project metadata (name, version, description, author)
    - Node.js engine requirement (>=18.0.0)
    - Scripts for build, start, dev, test, lint
-   - Dependencies: express, cors, helmet, dotenv, winston
+   - Dependencies: express, cors, helmet, dotenv, winston (for structured logging)
    - DevDependencies: typescript, @types/node, @types/express, ts-node, nodemon, jest, @types/jest, eslint, prettier
 
 3. Create a `tsconfig.json` with:
@@ -71,4 +71,4 @@ Create a new Node.js/TypeScript application under the src folder with the follow
 
 9. Include proper ESLint and Prettier configuration
 
-The application should be production-ready with proper TypeScript configuration, error handling, logging, and testing setup.
+The application should be production-ready with proper TypeScript configuration, error handling, structured logging using Winston (never use console.log in production), and testing setup.

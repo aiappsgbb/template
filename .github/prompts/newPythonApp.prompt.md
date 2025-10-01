@@ -56,7 +56,8 @@ Generate a `main.py` file with:
 - Configuration loading using utils.config
 - OpenTelemetry tracing integration using utils.tracing
 - Proper async/await patterns
-- Error handling and logging
+- Error handling and logging using Python's logging module (never use print statements)
+- Structured logging with appropriate log levels (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 - CORS middleware configuration
 - Uvicorn server configuration for containerization
 - Tracing instrumentation for requests and external calls
@@ -145,7 +146,9 @@ Include proper Python package structure with `__init__.py` files in:
 - Multi-stage builds for optimization
 - Security best practices (non-root user)
 - Health checks for container orchestration
-- Proper logging configuration
+- Proper logging configuration using Python's logging module
+- Structured logging with JSON format for production environments
+- Never use print() statements for application output
 - Azure Monitor integration via OpenTelemetry
 - Distributed tracing for microservices
 - Observability and monitoring ready

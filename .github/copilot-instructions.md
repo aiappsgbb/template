@@ -33,3 +33,12 @@ All prompt files are located in `.github/copilot/` directory:
 ## Customization
 
 Each prompt file can be customized to match your specific project requirements and coding standards. The prompts are designed to work with the existing repository structure and Azure infrastructure templates.
+
+## Development Standards
+
+When using these prompts, ensure adherence to the following standards:
+
+- **Logging**: Always use proper logging modules (Python's `logging`, Node.js `winston`) - never use `print()` or `console.log()` in production code
+- **Error Handling**: Implement structured error handling with appropriate logging levels
+- **Code Quality**: Follow linting, formatting, and type checking standards
+- **Security**: Implement security best practices and credential management
