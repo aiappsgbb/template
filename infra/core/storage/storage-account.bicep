@@ -8,31 +8,48 @@ param location string = resourceGroup().location
 param tags object = {}
 
 @description('The storage account SKU')
-param sku object = {
-  name: 'Standard_LRS'
-}
+param skuName string = 'Standard_LRS'
 
 @description('Allow blob public access')
 param allowBlobPublicAccess bool = false
 
-@description('Allow shared key access')
-param allowSharedKeyAccess bool = true
+@description('User Assigned Managed Identity Principal ID')
+param managedIdentityPrincipalId string = ''
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
-  name: name
-  location: location
-  tags: tags
-  kind: 'StorageV2'
-  sku: sku
-  properties: {
+@description('Whether the deployment is running in GitHub Actions')
+param githubActions bool = false
+
+// Determine principal type based on deployment context
+var principalType = githubActions ? 'ServicePrincipal' : 'User'
+
+// Use AVM Storage Account module
+module storageAccount 'br/public:avm/res/storage/storage-account:0.27.0' = {
+  name: 'storageAccount'
+  params: {
+    name: name
+    location: location
+    tags: tags
+    skuName: skuName
+    kind: 'StorageV2'
     accessTier: 'Hot'
-    allowBlobPublicAccess: allowBlobPublicAccess
-    allowSharedKeyAccess: allowSharedKeyAccess
-    minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: true
+    minimumTlsVersion: 'TLS1_2'
+    allowBlobPublicAccess: allowBlobPublicAccess
+    roleAssignments: !empty(managedIdentityPrincipalId) ? [
+      {
+        principalId: managedIdentityPrincipalId
+        roleDefinitionIdOrName: 'Storage Blob Data Contributor'
+        principalType: principalType
+      }
+      {
+        principalId: managedIdentityPrincipalId
+        roleDefinitionIdOrName: 'Storage Account Contributor'
+        principalType: principalType
+      }
+    ] : []
   }
 }
 
-output id string = storageAccount.id
-output name string = storageAccount.name
-output primaryEndpoints object = storageAccount.properties.primaryEndpoints
+output id string = storageAccount.outputs.resourceId
+output name string = storageAccount.outputs.name
+output primaryBlobEndpoint string = storageAccount.outputs.primaryBlobEndpoint

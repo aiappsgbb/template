@@ -11,48 +11,48 @@ param tags object = {}
 @allowed(['free', 'basic', 'standard', 'standard2', 'standard3', 'storage_optimized_l1', 'storage_optimized_l2'])
 param sku string = 'basic'
 
-@description('Number of replicas')
-param replicaCount int = 1
+@description('User Assigned Managed Identity Principal ID')
+param managedIdentityPrincipalId string = ''
 
-@description('Number of partitions')
-param partitionCount int = 1
-
-@description('Hosting mode for the search service')
-@allowed(['default', 'highDensity'])
-param hostingMode string = 'default'
+@description('Whether the deployment is running in GitHub Actions')
+param githubActions bool = false
 
 @description('Public network access setting')
-@allowed(['enabled', 'disabled'])
-param publicNetworkAccess string = 'enabled'
+@allowed(['Enabled', 'Disabled'])
+param publicNetworkAccess string = 'Enabled'
+
+// Determine principal type based on deployment context
+var principalType = githubActions ? 'ServicePrincipal' : 'User'
 
 @description('Search service semantic search setting')
 @allowed(['disabled', 'free', 'standard'])
 param semanticSearch string = 'disabled'
 
-// AI Search Service
-resource aiSearchService 'Microsoft.Search/searchServices@2024-06-01-preview' = {
-  name: name
-  location: location
-  tags: tags
-  sku: {
-    name: sku
-  }
-  properties: {
-    replicaCount: replicaCount
-    partitionCount: partitionCount
-    hostingMode: hostingMode
+// Use AVM AI Search module
+module aiSearchService 'br/public:avm/res/search/search-service:0.11.1' = {
+  name: 'aiSearchService'
+  params: {
+    name: name
+    location: location
+    tags: tags
+    sku: sku
     publicNetworkAccess: publicNetworkAccess
     semanticSearch: semanticSearch
-    networkRuleSet: {
-      ipRules: []
-    }
-    encryptionWithCmk: {
-      enforcement: 'Unspecified'
-    }
-    disableLocalAuth: false
+    roleAssignments: !empty(managedIdentityPrincipalId) ? [
+      {
+        principalId: managedIdentityPrincipalId
+        roleDefinitionIdOrName: 'Search Service Contributor'
+        principalType: principalType
+      }
+      {
+        principalId: managedIdentityPrincipalId
+        roleDefinitionIdOrName: 'Search Index Data Contributor'
+        principalType: principalType
+      }
+    ] : []
   }
 }
 
-output id string = aiSearchService.id
-output name string = aiSearchService.name
-output endpoint string = 'https://${aiSearchService.name}.search.windows.net/'
+output id string = aiSearchService.outputs.resourceId
+output name string = aiSearchService.outputs.name
+output endpoint string = 'https://${aiSearchService.outputs.name}.search.windows.net/'

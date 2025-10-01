@@ -194,34 +194,105 @@ The template automatically detects:
 
 ## Available Infrastructure Modules
 
-The template includes several modern Azure services in `infra/core/`:
+The template includes several modern Azure services in `infra/core/` using **Azure Verified Modules (AVM)** for standard setups:
 
 ### **Hosting & Compute**
 
-- **Container Apps Environment**: Serverless container hosting platform
-- **Container App**: Deploy containerized applications with auto-scaling
-- **Container Registry**: Store and manage container images
+- **Container Apps Environment**: Serverless container hosting platform (AVM)
+- **Container App**: Deploy containerized applications with auto-scaling and incremental updates (AVM)  
+- **Container Registry**: Store and manage container images (AVM)
+- **Fetch Container Image**: Utility module for faster incremental Container App deployments
+
+### **Incremental Deployment Support**
+
+The Container App module supports both initial deployment and fast incremental updates:
+
+```bicep
+// Initial deployment
+module containerApp './core/host/container-app.bicep' = {
+  params: {
+    exists: false  // First-time deployment
+    containerImage: 'myregistry.azurecr.io/myapp:v1.0'
+    // ... other parameters
+  }
+}
+
+// Incremental update - faster deployment
+module containerApp './core/host/container-app.bicep' = {
+  params: {
+    exists: true   // Update existing app
+    containerImage: 'myregistry.azurecr.io/myapp:v1.1'  // New image
+    // ... other parameters remain the same
+  }
+}
+```
+
+Benefits of incremental updates:
+
+- **Faster Deployments**: Only updates changed components
+- **Revision Management**: Leverages Container Apps' built-in versioning
+- **Zero Downtime**: Seamless container image updates
 
 ### **AI & Machine Learning**
 
 - **AI Foundry**: Complete AI development platform with AI Hub and Projects
-- **AI Search**: Intelligent search service with semantic capabilities
-- **Application Insights**: Application performance monitoring
+- **AI Search**: Intelligent search service with semantic capabilities (AVM)
+- **Application Insights**: Application performance monitoring (AVM)
 
 ### **Data & Storage**
 
-- **Cosmos DB**: Globally distributed NoSQL database
-- **Storage Account**: Blob storage, queues, tables with security best practices
-- **Log Analytics**: Centralized logging and monitoring
+- **Cosmos DB**: Globally distributed NoSQL database (AVM)
+- **Storage Account**: Blob storage, queues, tables with security best practices (AVM)
+- **Log Analytics**: Centralized logging and monitoring (AVM)
 
 ### **Security & Identity**
 
-- **Key Vault**: Secure secret, key, and certificate management with RBAC
-- **User Assigned Managed Identity**: Secure identity for Azure resources
+- **Key Vault**: Secure secret, key, and certificate management with RBAC (AVM)
+- **User Assigned Managed Identity**: Secure identity for Azure resources (AVM)
 
 ### **Deployment Utilities**
 
 - **Import Images to ACR**: Automated container image import functionality
+
+### **RBAC Integration**
+
+All modules automatically assign appropriate RBAC roles with **dual scenario support**:
+
+#### **Deployment Context Detection**
+
+- **GitHub Actions**: Uses `ServicePrincipal` type for User Assigned Managed Identity
+- **Local Development**: Uses `User` type for current user/developer
+- **Automatic Detection**: Based on `GITHUB_ACTIONS` environment variable
+
+#### **Role Assignments by Service**
+
+- **Container Registry**: `AcrPull`, `AcrPush`
+- **Key Vault**: `Key Vault Secrets User`, `Key Vault Certificate User`
+- **Storage Account**: `Storage Blob Data Contributor`, `Storage Account Contributor`
+- **Cosmos DB**: `DocumentDB Account Contributor`
+- **AI Search**: `Search Service Contributor`, `Search Index Data Contributor`
+- **Monitoring**: `Log Analytics Reader`, `Application Insights Component Contributor`
+
+#### **Usage Examples**
+
+**GitHub Actions Deployment:**
+
+```yaml
+# GitHub Actions automatically sets GITHUB_ACTIONS=true
+# Uses ServicePrincipal for User Assigned Managed Identity
+- name: Deploy to Azure
+  run: azd up --no-prompt
+```
+
+**Local Development:**
+
+```bash
+# Local deployment uses current user credentials
+# Uses User type for developer account
+azd up
+```
+
+The template automatically detects the deployment context and assigns the appropriate principal type for RBAC, ensuring security works seamlessly in both CI/CD and local development scenarios.
 
 ## IP Metadata Management
 

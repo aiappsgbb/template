@@ -10,18 +10,25 @@ param tags object = {}
 @description('Log Analytics Workspace ID for the environment')
 param logAnalyticsWorkspaceId string
 
-@description('Whether to enable workload profiles')
-param workloadProfiles array = []
+@description('User Assigned Managed Identity Principal ID')
+param managedIdentityPrincipalId string = ''
+
+@description('Whether the deployment is running in GitHub Actions')
+param githubActions bool = false
 
 @description('Zone redundancy setting')
 param zoneRedundant bool = false
 
-// Container Apps Environment
-resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
-  name: name
-  location: location
-  tags: tags
-  properties: {
+// Determine principal type based on deployment context
+var principalType = githubActions ? 'ServicePrincipal' : 'User'
+
+// Use AVM Container Apps Environment module
+module containerAppsEnvironment 'br/public:avm/res/app/managed-environment:0.11.3' = {
+  name: 'containerAppsEnvironment'
+  params: {
+    name: name
+    location: location
+    tags: tags
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
@@ -30,10 +37,16 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2024-03-01'
       }
     }
     zoneRedundant: zoneRedundant
-    workloadProfiles: !empty(workloadProfiles) ? workloadProfiles : null
+    roleAssignments: !empty(managedIdentityPrincipalId) ? [
+      {
+        principalId: managedIdentityPrincipalId
+        roleDefinitionIdOrName: 'ContainerApp Environment Reader'
+        principalType: principalType
+      }
+    ] : []
   }
 }
 
-output id string = containerAppsEnvironment.id
-output name string = containerAppsEnvironment.name
-output defaultDomain string = containerAppsEnvironment.properties.defaultDomain
+output id string = containerAppsEnvironment.outputs.resourceId
+output name string = containerAppsEnvironment.outputs.name
+output defaultDomain string = containerAppsEnvironment.outputs.defaultDomain

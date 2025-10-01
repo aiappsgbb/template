@@ -7,90 +7,61 @@ param location string = resourceGroup().location
 @description('Tags to apply to the account')
 param tags object = {}
 
-@description('Cosmos DB API type')
-@allowed(['Sql', 'MongoDB', 'Cassandra', 'Gremlin', 'Table'])
-param databaseAccountOfferType string = 'Sql'
-
 @description('Consistency level for the account')
 @allowed(['Eventual', 'ConsistentPrefix', 'Session', 'BoundedStaleness', 'Strong'])
 param defaultConsistencyLevel string = 'Session'
 
-@description('Enable automatic failover')
-param enableAutomaticFailover bool = false
+@description('User Assigned Managed Identity Principal ID')
+param managedIdentityPrincipalId string = ''
 
-@description('Enable multiple write locations')
-param enableMultipleWriteLocations bool = false
-
-@description('Locations for the Cosmos DB account')
-param locations array = [
-  {
-    locationName: location
-    failoverPriority: 0
-    isZoneRedundant: false
-  }
-]
+@description('Whether the deployment is running in GitHub Actions')
+param githubActions bool = false
 
 @description('Database name (for SQL API)')
 param databaseName string = 'main'
 
+// Determine principal type based on deployment context
+var principalType = githubActions ? 'ServicePrincipal' : 'User'
+
 @description('Container name (for SQL API)')
 param containerName string = 'items'
 
-// Cosmos DB Account
-resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2024-05-15' = {
-  name: name
-  location: location
-  tags: tags
-  kind: databaseAccountOfferType == 'MongoDB' ? 'MongoDB' : 'GlobalDocumentDB'
-  properties: {
-    databaseAccountOfferType: 'Standard'
-    consistencyPolicy: {
-      defaultConsistencyLevel: defaultConsistencyLevel
-    }
-    locations: locations
-    capabilities: databaseAccountOfferType == 'Sql' ? [] : [
+// Use AVM Cosmos DB module
+module cosmosDbAccount 'br/public:avm/res/document-db/database-account:0.16.0' = {
+  name: 'cosmosDbAccount'
+  params: {
+    name: name
+    location: location
+    tags: tags
+    failoverLocations: [
       {
-        name: databaseAccountOfferType == 'MongoDB' ? 'EnableMongo' : 'Enable${databaseAccountOfferType}'
+        locationName: location
+        failoverPriority: 0
+        isZoneRedundant: false
       }
     ]
-    enableAutomaticFailover: enableAutomaticFailover
-    enableMultipleWriteLocations: enableMultipleWriteLocations
-    isVirtualNetworkFilterEnabled: false
-    virtualNetworkRules: []
-    ipRules: []
-    enableCassandraConnector: false
-    enableAnalyticalStorage: false
-  }
-}
-
-// SQL Database (only for SQL API)
-resource cosmosDbDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2024-05-15' = if (databaseAccountOfferType == 'Sql') {
-  parent: cosmosDbAccount
-  name: databaseName
-  properties: {
-    resource: {
-      id: databaseName
-    }
-  }
-}
-
-// SQL Container (only for SQL API)
-resource cosmosDbContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-05-15' = if (databaseAccountOfferType == 'Sql') {
-  parent: cosmosDbDatabase
-  name: containerName
-  properties: {
-    resource: {
-      id: containerName
-      partitionKey: {
-        paths: [
-          '/id'
+    defaultConsistencyLevel: defaultConsistencyLevel
+    sqlDatabases: [
+      {
+        name: databaseName
+        containers: [
+          {
+            name: containerName
+            paths: ['/id']
+          }
         ]
-        kind: 'Hash'
       }
-    }
+    ]
+    roleAssignments: !empty(managedIdentityPrincipalId) ? [
+      {
+        principalId: managedIdentityPrincipalId
+        roleDefinitionIdOrName: 'DocumentDB Account Contributor'
+        principalType: principalType
+      }
+    ] : []
   }
 }
 
-output id string = cosmosDbAccount.id
-output name string = cosmosDbAccount.name
-output endpoint string = cosmosDbAccount.properties.documentEndpoint
+output id string = cosmosDbAccount.outputs.resourceId
+output name string = cosmosDbAccount.outputs.name
+output endpoint string = cosmosDbAccount.outputs.endpoint

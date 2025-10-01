@@ -19,21 +19,47 @@ param publicNetworkAccess string = 'Enabled'
 @description('Zone redundancy setting')
 param zoneRedundancy string = 'Disabled'
 
-// Container Registry
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
-  name: name
-  location: location
-  tags: tags
-  sku: {
-    name: sku
-  }
-  properties: {
-    adminUserEnabled: adminUserEnabled
+@description('User Assigned Managed Identity Principal ID')
+param managedIdentityPrincipalId string = ''
+
+@description('User Assigned Managed Identity Client ID')
+param managedIdentityClientId string = ''
+
+@description('User Assigned Managed Identity Resource ID')
+param managedIdentityResourceId string = ''
+
+@description('Whether the deployment is running in GitHub Actions')
+param githubActions bool = false
+
+// Determine principal type based on deployment context
+var principalType = githubActions ? 'ServicePrincipal' : 'User'
+
+// Use AVM Container Registry module
+module containerRegistry 'br/public:avm/res/container-registry/registry:0.9.3' = {
+  name: 'containerRegistry'
+  params: {
+    name: name
+    location: location
+    tags: tags
+    acrSku: sku
+    acrAdminUserEnabled: adminUserEnabled
     publicNetworkAccess: publicNetworkAccess
     zoneRedundancy: zoneRedundancy
+    roleAssignments: !empty(managedIdentityPrincipalId) ? [
+      {
+        principalId: managedIdentityPrincipalId
+        roleDefinitionIdOrName: 'AcrPull' // Built-in role for pulling images
+        principalType: principalType
+      }
+      {
+        principalId: managedIdentityPrincipalId
+        roleDefinitionIdOrName: 'AcrPush' // Built-in role for pushing images
+        principalType: principalType
+      }
+    ] : []
   }
 }
 
-output id string = containerRegistry.id
-output name string = containerRegistry.name
-output loginServer string = containerRegistry.properties.loginServer
+output id string = containerRegistry.outputs.resourceId
+output name string = containerRegistry.outputs.name
+output loginServer string = containerRegistry.outputs.loginServer

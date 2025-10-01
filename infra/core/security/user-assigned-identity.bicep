@@ -7,14 +7,17 @@ param location string = resourceGroup().location
 @description('Tags to apply to the identity')
 param tags object = {}
 
-// User Assigned Managed Identity
-resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
-  name: name
-  location: location
-  tags: tags
+// Use AVM User Assigned Managed Identity module
+module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
+  name: 'userAssignedIdentity'
+  params: {
+    name: name
+    location: location
+    tags: tags
+  }
 }
 
-output id string = userAssignedIdentity.id
-output name string = userAssignedIdentity.name
-output principalId string = userAssignedIdentity.properties.principalId
-output clientId string = userAssignedIdentity.properties.clientId
+output id string = userAssignedIdentity.outputs.resourceId
+output name string = userAssignedIdentity.outputs.name
+output principalId string = userAssignedIdentity.outputs.principalId
+output clientId string = userAssignedIdentity.outputs.clientId

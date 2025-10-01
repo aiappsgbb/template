@@ -35,15 +35,15 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 }
 
 // User Assigned Managed Identity (uncomment and modify as needed)
-// module managedIdentity './core/security/user-assigned-identity.bicep' = {
-//   name: 'managedIdentity'
-//   scope: rg
-//   params: {
-//     name: '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}'
-//     location: location
-//     tags: tags
-//   }
-// }
+module managedIdentity './core/security/user-assigned-identity.bicep' = {
+  name: 'managedIdentity'
+  scope: rg
+  params: {
+    name: '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}'
+    location: location
+    tags: tags
+  }
+}
 
 // Container Apps Environment (uncomment and modify as needed)
 // module containerAppsEnvironment './core/host/container-apps-environment.bicep' = {
@@ -54,6 +54,8 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 //     location: location
 //     tags: tags
 //     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
+//     managedIdentityPrincipalId: managedIdentity.outputs.principalId
+//     githubActions: githubActions
 //   }
 // }
 
@@ -66,6 +68,10 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 //     location: location
 //     tags: tags
 //     adminUserEnabled: true
+//     managedIdentityPrincipalId: managedIdentity.outputs.principalId
+//     managedIdentityClientId: managedIdentity.outputs.clientId
+//     managedIdentityResourceId: managedIdentity.outputs.id
+//     githubActions: githubActions
 //   }
 // }
 
@@ -77,9 +83,12 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 //     name: '${abbrs.appContainerApps}web-${resourceToken}'
 //     location: location
 //     tags: tags
+//     exists: false // Set to true for incremental updates, false for initial deployment
 //     containerAppsEnvironmentId: containerAppsEnvironment.outputs.id
 //     containerRegistryName: containerRegistry.outputs.name
 //     userAssignedIdentityId: managedIdentity.outputs.id
+//     managedIdentityPrincipalId: managedIdentity.outputs.principalId
+//     githubActions: githubActions
 //   }
 // }
 
@@ -92,6 +101,25 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 //     applicationInsightsName: '${abbrs.insightsComponents}${resourceToken}'
 //     location: location
 //     tags: tags
+//     managedIdentityPrincipalId: managedIdentity.outputs.principalId
+//     managedIdentityClientId: managedIdentity.outputs.clientId
+//     managedIdentityResourceId: managedIdentity.outputs.id
+//     githubActions: githubActions
+//   }
+// }
+
+// Key Vault (uncomment and modify as needed)
+// module keyVault './core/security/keyvault.bicep' = {
+//   name: 'keyVault'
+//   scope: rg
+//   params: {
+//     name: '${abbrs.keyVaultVaults}${resourceToken}'
+//     location: location
+//     tags: tags
+//     managedIdentityPrincipalId: managedIdentity.outputs.principalId
+//     managedIdentityClientId: managedIdentity.outputs.clientId
+//     managedIdentityResourceId: managedIdentity.outputs.id
+//     githubActions: githubActions
 //   }
 // }
 
@@ -104,6 +132,8 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 //     location: location
 //     tags: tags
 //     sku: 'basic'
+//     managedIdentityPrincipalId: managedIdentity.outputs.principalId
+//     githubActions: githubActions
 //   }
 // }
 
@@ -115,6 +145,21 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 //     name: '${abbrs.documentDBDatabaseAccounts}${resourceToken}'
 //     location: location
 //     tags: tags
+//     managedIdentityPrincipalId: managedIdentity.outputs.principalId
+//     githubActions: githubActions
+//   }
+// }
+
+// Storage Account (uncomment and modify as needed)
+// module storageAccount './core/storage/storage-account.bicep' = {
+//   name: 'storageAccount'
+//   scope: rg
+//   params: {
+//     name: '${abbrs.storageStorageAccounts}${resourceToken}'
+//     location: location
+//     tags: tags
+//     managedIdentityPrincipalId: managedIdentity.outputs.principalId
+//     githubActions: githubActions
 //   }
 // }
 
