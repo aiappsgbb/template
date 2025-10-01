@@ -1,0 +1,54 @@
+{
+  "$schema": "./schemas/ip-metadata.schema.json",
+  "name": "Azure Template Project",
+  "description": "A comprehensive Azure Developer CLI template for modern cloud applications with AI capabilities",
+  "maturity": "Bronze",
+  "region": "AMER",
+  "industry": "Technology",
+  "owner": "your-alias",
+  "pattern": [
+    "AI/ML",
+    "Application Innovation",
+    "Cloud Native"
+  ],
+  "services": [
+    "Azure Container Apps",
+    "Azure Container Registry",
+    "Azure AI Search",
+    "Azure OpenAI",
+    "Azure Cosmos DB",
+    "Azure Key Vault",
+    "Azure Monitor",
+    "Azure Application Insights",
+    "Azure Storage",
+    "Azure Machine Learning"
+  ],
+  "tags": [
+    "template",
+    "azd",
+    "azure-developer-cli",
+    "container-apps",
+    "ai",
+    "bicep"
+  ],
+  "version": "1.0.0",
+  "createdDate": "2025-10-01",
+  "lastUpdated": "2025-10-01",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/aiappsgbb/template",
+    "branch": "main"
+  },
+  "documentation": {
+    "readme": "https://github.com/aiappsgbb/template/blob/main/README.md",
+    "architecture": "https://github.com/aiappsgbb/template/blob/main/docs/ARCHITECTURE.md"
+  },
+  "contacts": {
+    "technical": [
+      "your-alias"
+    ],
+    "business": [
+      "your-alias"
+    ]
+  }
+}
