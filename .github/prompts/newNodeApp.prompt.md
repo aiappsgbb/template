@@ -1,7 +1,7 @@
 ---
 mode: 'agent'
 model: Auto (copilot)
-tools: ['githubRepo', 'codebase']
+tools: ['githubRepo', 'search/codebase']
 description: 'Create a new Node.js/TypeScript application'
 ---
 Create a new Node.js/TypeScript application under the src folder with the following structure:

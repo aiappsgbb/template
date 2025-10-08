@@ -1,7 +1,7 @@
 ---
 mode: 'agent'
 model: Auto (copilot)
-tools: ['githubRepo', 'codebase']
+tools: ['githubRepo', 'search/codebase']
 description: 'Create a new README file with standard IP structure'
 ---
 Create a comprehensive README.md file with a standard structure for an intellectual property (IP) project.

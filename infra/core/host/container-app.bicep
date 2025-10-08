@@ -54,8 +54,8 @@ param environmentVariables array = []
 
 @description('CPU and memory resources')
 param resources object = {
-  cpu: '0.25'
-  memory: '0.5Gi'
+  cpu: 1
+  memory: '2Gi'
 }
 
 // Use AVM Container App module with dynamic container configuration

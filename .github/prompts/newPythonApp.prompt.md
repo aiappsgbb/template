@@ -1,7 +1,7 @@
 ---
 mode: 'agent'
 model: Auto (copilot)
-tools: ['githubRepo', 'codebase']
+tools: ['githubRepo', 'search/codebase']
 description: 'Create a new Python application using uv package manager'
 ---
 
@@ -9,18 +9,21 @@ description: 'Create a new Python application using uv package manager'
 
 Create a new Python application using uv package manager under the src folder with a simplified structure.
 
+**Application Name**: ${input:appName:my-python-app}
+
 ## Directory Structure
 
 Create the following directory structure:
 
 ```text
 src/
-├── <newapp>/
+├── ${input:appName}/
 │   ├── pyproject.toml
 │   ├── README.md
 │   ├── .python-version
 │   ├── Dockerfile
 │   ├── .dockerignore
+│   ├── gunicorn.conf.py
 │   ├── __init__.py
 │   ├── main.py
 │   └── utils/
@@ -35,11 +38,20 @@ src/
 
 Generate a `pyproject.toml` file with:
 
-- Project metadata (name, version, description, authors)
+- Project metadata (name: "${input:appName}", version, description, authors)
 - Python version requirement (>=3.11)
-- Dependencies including: fastapi, uvicorn, pydantic, pydantic-settings, httpx, python-dotenv
-- OpenTelemetry dependencies: opentelemetry-api, opentelemetry-sdk, opentelemetry-instrumentation-fastapi, opentelemetry-instrumentation-httpx, azure-monitor-opentelemetry-exporter
-- Development dependencies: pytest, pytest-asyncio, black, ruff, mypy
+- Dependencies with safe version pinning (no major version upgrades):
+  - fastapi>=0.115.0,<0.116.0 (pin minor version to prevent breaking changes)
+  - uvicorn>=0.32.0,<0.33.0 (ASGI server for development)
+  - gunicorn>=23.0.0,<24.0.0 (WSGI/ASGI server for production)
+  - pydantic>=2.9.0,<3.0.0, pydantic-settings>=2.6.0,<3.0.0
+  - httpx>=0.27.0,<0.28.0, python-dotenv>=1.0.0,<2.0.0
+- OpenTelemetry dependencies with safe versioning:
+  - opentelemetry-api>=1.27.0,<2.0.0, opentelemetry-sdk>=1.27.0,<2.0.0
+  - opentelemetry-instrumentation-fastapi>=0.48.0,<0.49.0
+  - opentelemetry-instrumentation-httpx>=0.48.0,<0.49.0
+  - azure-monitor-opentelemetry-exporter>=1.0.0,<2.0.0
+- Development dependencies: pytest>=8.3.0,<9.0.0, pytest-asyncio>=0.24.0,<0.25.0, black>=24.10.0,<25.0.0, ruff>=0.7.0,<0.8.0, mypy>=1.11.0,<2.0.0
 - Build system configuration for uv
 - Tool configurations for ruff, black, mypy, and pytest
 
@@ -74,7 +86,93 @@ Create a multi-stage Dockerfile optimized for FastAPI with:
 - Health check configuration
 - Production-ready settings
 
-### 5. .dockerignore
+```dockerfile
+# Dockerfile typical structure
+FROM mcr.microsoft.com/azurelinux/base/python:3.12
+WORKDIR /app
+
+# Install CA certificates
+RUN tdnf install -y ca-certificates && \
+    update-ca-trust enable && \
+    update-ca-trust extract && \
+    tdnf clean all
+
+# Set SSL_CERT_FILE for Python
+ENV SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+
+# Install uv for dependency management
+COPY --from=ghcr.io/astral-sh/uv:0.7.8 /uv /uvx /bin/
+
+# Copy dependency files
+COPY pyproject.toml uv.lock* ./
+
+# Install dependencies
+RUN uv sync --locked --no-dev
+
+# Copy application code
+COPY . .
+
+# Expose port 80 for Azure Container Apps
+EXPOSE 80
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# CHANGE AS APPROPRIATE
+CMD ["uv", "run", "--", "gunicorn", "-c", "gunicorn.conf.py", "main:app"]
+```
+
+### 5. gunicorn.conf.py
+
+Create a production-ready Gunicorn configuration file with:
+
+- Bind to 0.0.0.0:80 for Azure Container Apps
+- Worker process configuration based on CPU cores
+- Worker class: uvicorn.workers.UvicornWorker for ASGI support
+- Timeout settings for production workloads
+- Logging configuration with structured JSON logs
+- Preload application for better performance
+- Keep-alive settings for connection reuse
+- Security headers and configuration
+- Error handling and graceful shutdowns
+
+Example configuration:
+```python
+# gunicorn.conf.py
+import multiprocessing
+import os
+
+# Server socket
+bind = "0.0.0.0:80"
+backlog = 2048
+
+# Worker processes
+workers = multiprocessing.cpu_count() * 2 + 1
+worker_class = "uvicorn.workers.UvicornWorker"
+worker_connections = 1000
+max_requests = 1000
+max_requests_jitter = 50
+
+# Timeouts
+timeout = 30
+keepalive = 2
+
+# Application
+preload_app = True
+
+# Logging
+accesslog = "-"
+errorlog = "-"
+loglevel = os.getenv("LOG_LEVEL", "info").lower()
+access_log_format = '{\"time\": \"%(t)s\", \"method\": \"%(m)s\", \"url\": \"%(U)s\", \"status\": %(s)s, \"response_time\": %(D)s, \"user_agent\": \"%(a)s\"}'
+
+# Process naming
+proc_name = "fastapi-app"
+```
+
+### 6. .dockerignore
 
 Create a `.dockerignore` file to exclude:
 
@@ -85,7 +183,7 @@ Create a `.dockerignore` file to exclude:
 - IDE configuration files
 - OS-specific files
 
-### 6. utils/config.py
+### 7. utils/config.py
 
 Create a configuration module using pydantic-settings with:
 
@@ -96,8 +194,33 @@ Create a configuration module using pydantic-settings with:
 - OpenTelemetry tracing settings
 - Proper type hints and defaults
 - Environment variable loading
+- DO REMEMBER to invoke load_dotenv(override=True) at the beginning!
+- Azure credential management using ChainedTokenCredential best practice
 
-### 7. utils/tracing.py
+Include a standard Azure credential helper function:
+```python
+from azure.identity import AzureDeveloperCliCredential, ManagedIdentityCredential, ChainedTokenCredential
+
+def get_azure_credential() -> ChainedTokenCredential:
+    """Get Azure credential using best practice chain.
+    
+    Returns:
+        ChainedTokenCredential that tries Azure Developer CLI first, then Managed Identity.
+        This works for both local development (azd) and production (Container Apps).
+    """
+    return ChainedTokenCredential(
+        AzureDeveloperCliCredential(),  # tries Azure Developer CLI (azd) for local development
+        ManagedIdentityCredential()     # fallback to managed identity for production
+    )
+```
+
+This approach provides:
+- Seamless local development experience (works with azd specifically)
+- Production readiness (automatically uses managed identity in Azure Container Apps)
+- No credential configuration needed
+- Consistent authentication pattern across all Azure services
+
+### 8. utils/tracing.py
 
 Create an OpenTelemetry tracing module with:
 
@@ -110,7 +233,7 @@ Create an OpenTelemetry tracing module with:
 - Error handling for tracing setup
 - Integration with utils.config for configuration management
 
-### 8. README.md
+### 9. README.md
 
 Create a comprehensive `README.md` for the Python app with:
 
@@ -126,26 +249,24 @@ Create a comprehensive `README.md` for the Python app with:
 - Monitoring and observability setup
 - Azure Application Insights configuration
 
-### 9. Package Structure
+### 10. Package Structure
 
 Include proper Python package structure with `__init__.py` files in:
 
 - Root application directory
 - utils/ directory (with config.py and tracing.py)
 
-### 10. Azure Developer CLI Configuration
+### 11. Azure Developer CLI Configuration
 
 Update the root `azure.yaml` file to include the new Python application as a service:
 
 - Add a new service entry under the `services` section
 - Configure the service with:
-  - Service name matching the application directory name
+  - Service name: "${input:appName}"
   - Language: python
   - Host: containerapp
   - Docker configuration with:
-    - Registry: `"${AZURE_CONTAINER_REGISTRY_ENDPOINT}"`
     - Remote builds enabled: `remoteBuild: true`
-    - Build arguments for cross-platform compatibility
   - Environment variables for Azure Monitor integration
 - Ensure proper service dependencies if needed
 - Configure resource group and location references
@@ -154,18 +275,87 @@ Update the root `azure.yaml` file to include the new Python application as a ser
 Example service configuration:
 ```yaml
 services:
-  my-python-app:
-    project: "./src/my-python-app"
+  ${input:appName}:
+    project: "./src/${input:appName}"
     language: python
     host: containerapp
     docker:
-      registry: "${AZURE_CONTAINER_REGISTRY_ENDPOINT}"
       remoteBuild: true
-      buildArgs:
-        - "--platform=linux/amd64"
-    env:
-      - AZURE_OPENAI_ENDPOINT
-      - APPLICATION_INSIGHTS_CONNECTION_STRING
+```
+
+### 12. Infrastructure Configuration
+
+Update the `infra/main.bicep` file to include a new container app module for the Python application:
+
+- Add a new module declaration using the `infra/core/host/container-app.bicep` template
+- Configure the module with:
+  - Unique name for the container app (based on app name and environment)
+  - Location parameter reference
+  - Tags from the main template
+  - Container Apps Environment ID reference
+  - Container Registry name reference
+  - User Assigned Identity ID for ACR access
+  - Managed Identity Principal ID for RBAC
+  - GitHub Actions parameter for deployment context
+  - Container image parameter (will be updated during deployment)
+  - Environment variables specific to the Python application
+  - Resource allocation (CPU and memory)
+  - Container port (typically 80 for FastAPI apps)
+
+Example module configuration:
+```bicep
+// ${input:appName} Application
+module ${input:appName}App 'core/host/container-app.bicep' = {
+  name: '${input:appName}-app'
+  params: {
+    name: '${abbrs.appContainerApps}${input:appName}-${environmentName}'
+    location: location
+    tags: tags
+    containerAppsEnvironmentId: containerAppsEnvironment.outputs.id
+    containerRegistryName: containerRegistry.outputs.name
+    userAssignedIdentityId: userAssignedIdentity.outputs.id
+    managedIdentityPrincipalId: principalId
+    githubActions: githubActions
+    containerImage: ${input:appName}AppImage
+    containerPort: 80
+    environmentVariables: [
+      {
+        name: 'AZURE_CLIENT_ID'
+        value: userAssignedIdentity.outputs.clientId
+      }
+      {
+        name: 'APPLICATION_INSIGHTS_CONNECTION_STRING'
+        value: monitoring.outputs.applicationInsightsConnectionString
+      }
+      {
+        name: 'AZURE_KEY_VAULT_ENDPOINT'
+        value: keyVault.outputs.endpoint
+      }
+      {
+        name: 'LOG_LEVEL'
+        value: 'INFO'
+      }
+    ]
+    resources: {
+      cpu: 1
+      memory: '2Gi'
+    }
+  }
+}
+```
+
+- Add a parameter for the container image at the top of main.bicep:
+```bicep
+@description('Container image for ${input:appName} application')
+param ${input:appName}AppImage string = 'mcr.microsoft.com/k8se/quickstart:latest'
+```
+
+- Add output values for the new container app:
+```bicep
+// ${input:appName} App Outputs
+output ${upper(replace("${input:appName}", '-', '_'))}_APP_ENDPOINT string = ${input:appName}App.outputs.fqdn
+output ${upper(replace("${input:appName}", '-', '_'))}_APP_NAME string = ${input:appName}App.outputs.name
+output ${upper(replace("${input:appName}", '-', '_'))}_APP_ID string = ${input:appName}App.outputs.id
 ```
 
 ## Technical Requirements
@@ -178,13 +368,15 @@ services:
 - Environment-based configuration
 - Clean, maintainable code structure
 - Docker containerization ready
-- Multi-stage builds for optimization
+- Multi-stage builds for optimization (if applicable)
 - Security best practices (non-root user)
-- Health checks for container orchestration
 - Proper logging configuration using Python's logging module
-- Structured logging with JSON format for production environments
 - Never use print() statements for application output
 - Azure Monitor integration via OpenTelemetry
 - Distributed tracing for microservices
 - Observability and monitoring ready
 - Performance tracking and metrics
+- Safe dependency versioning (use >= and < operators to prevent major version upgrades)
+- Production-ready ASGI server configuration with Gunicorn
+- Scalable worker process management
+- Graceful shutdown handling

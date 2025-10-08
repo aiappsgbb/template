@@ -1,7 +1,7 @@
 ---
 mode: 'agent'
 model: Auto (copilot)
-tools: ['githubRepo', 'codebase']
+tools: ['githubRepo', 'search/codebase']
 description: 'Setup Azure infrastructure with Bicep'
 ---
 Configure the main.bicep file to set up a comprehensive Azure infrastructure using all available modules in the infra/core directory.

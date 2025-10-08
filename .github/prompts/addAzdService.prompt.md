@@ -1,7 +1,7 @@
 ---
 mode: 'agent'
 model: Auto (copilot)
-tools: ['githubRepo', 'codebase']
+tools: ['githubRepo', 'search/codebase']
 description: 'Add a new service to azure.yaml configuration'
 ---
 
