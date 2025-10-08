@@ -27,9 +27,13 @@ This file defines AI agents and their capabilities for the Azure Template Projec
 **Context Files**:
 
 - `infra/**/*.bicep` - Infrastructure as Code templates
+- `infra/core/**/*.bicep` - Reusable Bicep modules (AVM and custom)
+- `infra/abbreviations.json` - Azure resource naming conventions
+- `infra/main.bicep` - Main infrastructure template
+- `infra/main.parameters.json` - Environment-specific parameters
 - `azure.yaml` - Azure Developer CLI configuration
 - `.azure/**/*` - Environment configurations
-- `schemas/ip-metadata.schema.json` - Metadata schema
+- `.github/ip-metadata.schema.json` - IP metadata validation schema
 
 **Specializations**:
 
@@ -53,9 +57,12 @@ This file defines AI agents and their capabilities for the Azure Template Projec
 **Context Files**:
 
 - `src/**/*` - Application source code
-- `.github/prompts/**/*.prompt.md` - Development templates
+- `.github/prompts/**/*.prompt.md` - Development templates and automation
 - `pyproject.toml`, `package.json`, `*.csproj` - Project configurations
 - `tests/**/*` - Test suites and configurations
+- `azure.yaml` - Service definitions and deployment configuration
+- `infra/scripts/**/*.py` - Deployment hook scripts
+- `Dockerfile`, `.dockerignore` - Container configurations
 
 **Specializations**:
 
@@ -80,8 +87,11 @@ This file defines AI agents and their capabilities for the Azure Template Projec
 
 - `.github/workflows/**/*` - CI/CD pipelines
 - `.github/prompts/**/*` - Automation templates
-- `azure.yaml` - Deployment configuration
-- `infra/core/deployment/**/*` - Deployment utilities
+- `azure.yaml` - Deployment configuration and service definitions
+- `infra/scripts/**/*.py` - AZD hook scripts for deployment automation
+- `infra/core/deployment/**/*` - Deployment utilities and modules
+- `.azure/env/` - Environment-specific configurations
+- `infra/main.parameters.json` - Infrastructure parameters
 
 **Specializations**:
 
@@ -89,6 +99,9 @@ This file defines AI agents and their capabilities for the Azure Template Projec
 - Container orchestration with Azure Container Apps
 - Infrastructure as Code automation
 - Multi-environment deployment strategies
+- Python-based deployment hook scripts
+- GitHub Actions with federated identity
+- Container image management and deployment
 
 ### AI Solutions Architect
 
@@ -104,10 +117,12 @@ This file defines AI agents and their capabilities for the Azure Template Projec
 
 **Context Files**:
 
-- `infra/core/ai/**/*.bicep` - AI infrastructure templates
-- `src/**/*ai*/**/*` - AI application code
-- `docs/ai-patterns.md` - AI implementation patterns
-- `schemas/**/*` - Data and model schemas
+- `infra/core/ai/**/*.bicep` - AI infrastructure templates and modules
+- `src/**/*ai*/**/*` - AI application code and implementations
+- `docs/ai-patterns.md` - AI implementation patterns and best practices
+- `.github/ip-metadata.schema.json` - IP metadata schema for AI projects
+- `azure.yaml` - AI service deployment configurations
+- `infra/core/ai/README-azure-openai.md` - Azure OpenAI module documentation
 
 **Specializations**:
 
@@ -122,19 +137,73 @@ This file defines AI agents and their capabilities for the Azure Template Projec
 
 ```text
 template/
-├── .azure/                 # AZD environment configs
-├── .github/               # GitHub workflows & prompts
-│   ├── prompts/          # Copilot prompt files
-│   └── workflows/        # CI/CD pipelines
-├── docs/                 # Documentation
-├── infra/                # Infrastructure as Code
-│   ├── core/            # Reusable Bicep modules
-│   └── main.bicep       # Main infrastructure template
-├── schemas/              # JSON schemas
-├── src/                 # Application source code
-├── tests/               # Test suites
-├── azure.yaml           # AZD configuration
-└── ip-metadata.json     # IP metadata
+├── .azure/                        # AZD environment configurations
+│   ├── env/                      # Environment-specific settings
+│   └── .env                      # Local environment variables
+├── .github/                      # GitHub integration & automation
+│   ├── prompts/                  # GitHub Copilot prompt files
+│   │   ├── newPythonApp.prompt.md       # Python FastAPI app creation
+│   │   ├── newNodeApp.prompt.md         # Node.js/TypeScript app creation
+│   │   ├── newReactApp.prompt.md        # React + Vite + Tailwind app creation
+│   │   ├── newGradioApp.prompt.md       # Gradio AI demo app creation
+│   │   ├── ipCompliance.prompt.md       # IP compliance validation
+│   │   ├── setupInfra.prompt.md         # Infrastructure setup
+│   │   ├── addAzdService.prompt.md      # Service addition to azd
+│   │   └── newReadme.prompt.md          # README generation
+│   ├── workflows/                # CI/CD pipelines
+│   │   └── azure-infra.yml       # Unified deployment workflow
+│   ├── ip-metadata.schema.json   # IP metadata validation schema
+│   └── copilot-instructions.md   # Copilot configuration
+├── docs/                         # Documentation
+│   └── ARCHITECTURE.md          # System architecture documentation
+├── infra/                        # Infrastructure as Code (Bicep)
+│   ├── abbreviations.json        # Azure resource abbreviations
+│   ├── main.bicep                # Main infrastructure template
+│   ├── main.parameters.json      # Environment parameters
+│   ├── core/                     # Reusable Bicep modules
+│   │   ├── ai/                   # AI service modules
+│   │   │   ├── ai-foundry.bicep         # Azure AI Foundry workspace
+│   │   │   ├── ai-search.bicep          # Azure AI Search service
+│   │   │   ├── azure-openai.bicep       # Azure OpenAI (new/existing)
+│   │   │   └── README-azure-openai.md   # OpenAI module documentation
+│   │   ├── database/             # Database modules
+│   │   │   └── cosmos-db.bicep          # Azure Cosmos DB
+│   │   ├── deployment/           # Deployment utilities
+│   │   │   ├── import-images-to-acr.bicep    # Container image import
+│   │   │   └── fetch-container-image.bicep   # Image fetching utility
+│   │   ├── host/                 # Hosting modules
+│   │   │   ├── container-app.bicep           # Azure Container Apps
+│   │   │   ├── container-apps-environment.bicep  # Container Apps Environment
+│   │   │   └── fetch-container-image.bicep   # Container image management
+│   │   ├── monitor/              # Monitoring modules
+│   │   │   └── monitoring.bicep         # Application Insights & Log Analytics
+│   │   ├── security/             # Security modules
+│   │   │   ├── keyvault.bicep           # Azure Key Vault
+│   │   │   └── user-assigned-identity.bicep  # Managed Identity
+│   │   └── storage/              # Storage modules
+│   │       ├── container-registry.bicep     # Azure Container Registry
+│   │       └── storage-account.bicep        # Azure Storage Account
+│   ├── data/                     # Data and sample files
+│   │   └── README.md
+│   └── scripts/                  # AZD hook scripts (Python-based)
+│       ├── pyproject.toml        # Python dependencies for hooks
+│       ├── utils.py              # Shared utilities for hooks
+│       ├── preprovision.py       # Pre-provision hook (validate env)
+│       ├── postprovision.py      # Post-provision hook (configure resources)
+│       ├── predeploy.py          # Pre-deploy hook (prepare deployments)
+│       └── postdeploy.py         # Post-deploy hook (finalization)
+├── schemas/                      # JSON schemas (moved to .github/)
+├── src/                          # Application source code
+│   └── README.md                # Application development guide
+├── tests/                        # Test suites
+├── assets/                       # Static assets and documentation
+│   └── README.md
+├── azure.yaml                    # Azure Developer CLI configuration
+├── ip-metadata.json             # Intellectual Property metadata
+├── .gitignore                   # Git ignore patterns
+├── LICENSE                      # License file
+├── README.md                    # Main project documentation
+└── AGENTS.md                    # AI agent configuration (this file)
 ```
 
 ### Key Technologies
@@ -146,6 +215,132 @@ template/
 - **Security**: Azure Key Vault, Managed Identities
 - **Monitoring**: Azure Monitor, Application Insights
 - **Development**: Python (uv), Node.js/TypeScript, C#/.NET
+
+### Infrastructure as Code (Bicep) Best Practices
+
+**Template Organization**:
+
+- **Modular Design**: Use `infra/core/` modules for reusability across projects
+- **Azure Verified Modules (AVM)**: Prefer AVM modules when available for standard resources
+- **Resource Naming**: Follow Azure naming conventions using `abbreviations.json`
+- **Parameter Management**: Use `main.parameters.json` for environment-specific values
+- **Output Definitions**: Always define outputs for resource integration points
+
+**Security & Compliance**:
+
+- **Managed Identities**: Use User Assigned Managed Identity for all Azure authentication
+- **RBAC Configuration**: Implement least privilege access with proper role assignments
+- **Secret Management**: Store secrets in Azure Key Vault, never in templates
+- **Network Security**: Configure appropriate network access controls
+- **Resource Tags**: Apply consistent tagging for governance and cost tracking
+
+**Module Standards**:
+
+- **Parameter Validation**: Use decorators for input validation (@minLength, @allowed)
+- **Resource Dependencies**: Properly define dependencies between resources
+- **Conditional Logic**: Use conditions for optional features (existing vs new resources)
+- **Cross-Resource Group**: Support resources in different resource groups when needed
+- **Documentation**: Include comprehensive README files for complex modules
+
+**Template Structure**:
+
+```bicep
+// Standard module structure
+targetScope = 'resourceGroup'
+
+// Parameters with validation
+@description('Resource name')
+param name string
+
+@description('Location for resources')
+param location string = resourceGroup().location
+
+// Variables for computed values
+var resourceName = '${name}-${uniqueString(resourceGroup().id)}'
+
+// Resources using AVM or custom modules
+module exampleResource 'br/public:avm/res/web/site:0.3.0' = {
+  name: 'example'
+  params: {
+    name: resourceName
+    location: location
+    // Additional parameters
+  }
+}
+
+// Outputs for integration
+output resourceId string = exampleResource.outputs.resourceId
+output resourceName string = exampleResource.outputs.name
+```
+
+### Azure Developer CLI (azd) Configuration
+
+**azure.yaml Structure**:
+
+- **Metadata Section**: Template information and version
+- **Services Configuration**: Container apps with proper language and host settings
+- **Environment Variables**: Centralized configuration for all services
+- **Docker Configuration**: Remote builds enabled for all containerized services
+- **Hook Scripts**: Python-based automation for deployment lifecycle
+
+**Hook Scripts Architecture**:
+
+- **Python-based**: All hooks use Python with shared utilities in `infra/scripts/`
+- **Dependency Management**: `pyproject.toml` manages hook script dependencies
+- **Shared Utilities**: `utils.py` provides common functions for logging, Azure CLI, etc.
+- **Environment Validation**: Scripts validate prerequisites and configuration
+- **Resource Configuration**: Post-provision hooks configure deployed resources
+
+**Hook Script Execution Order**:
+
+1. **preprovision.py**: Validate environment, check prerequisites, prepare for deployment
+2. **Infrastructure Provision**: Azure resources are created via Bicep templates
+3. **postprovision.py**: Configure deployed resources, set up RBAC, initialize services
+4. **predeploy.py**: Prepare application deployments, validate configurations
+5. **Application Deploy**: Container images are built and deployed
+6. **postdeploy.py**: Finalize deployment, run smoke tests, output endpoints
+
+**Hook Script Best Practices**:
+
+- **Logging**: Use Python logging module with structured output
+- **Error Handling**: Proper exception handling with meaningful error messages
+- **Idempotency**: Scripts should be safe to run multiple times
+- **Environment Variables**: Access azd environment variables via `os.environ`
+- **Azure CLI Integration**: Use subprocess or azure-cli-core for Azure operations
+- **Validation**: Check resource states before making changes
+- **Documentation**: Clear docstrings and inline comments
+
+**Example Hook Script Pattern**:
+
+```python
+#!/usr/bin/env python3
+import logging
+import os
+from utils import setup_logging, run_command, get_azd_env
+
+def main():
+    """Post-provision hook to configure deployed resources."""
+    setup_logging()
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Get environment variables from azd
+        env_vars = get_azd_env()
+        resource_group = env_vars.get('AZURE_RESOURCE_GROUP')
+        
+        # Configure deployed resources
+        configure_monitoring(resource_group)
+        setup_rbac_permissions(resource_group)
+        
+        logger.info('Post-provision configuration completed successfully')
+        
+    except Exception as e:
+        logger.error(f'Post-provision hook failed: {e}')
+        raise
+
+if __name__ == '__main__':
+    main()
+```
 
 ### Development Standards
 
