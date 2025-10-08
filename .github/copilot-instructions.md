@@ -18,12 +18,11 @@ Type the prompt command in any chat or inline chat session with GitHub Copilot t
 
 Examples:
 ```
-@workspace /newPythonApp
-@workspace /newNodeApp
-@workspace /newGradioApp
-@workspace /setupInfra
-@workspace /addAzdService
-@workspace /newReadme
+/newPythonApp
+/newNodeApp
+/newGradioApp
+/setupInfra
+/newReadme
 ```
 
 ## Prompt Files Location
