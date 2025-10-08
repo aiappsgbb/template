@@ -33,11 +33,14 @@ services:
 ```yaml
 services:
   my-python-app:
+    project: "./src/my-python-app"
     language: python
     host: containerapp
     docker:
-      path: ./src/my-python-app
-      context: ./src/my-python-app
+      registry: "${AZURE_CONTAINER_REGISTRY_ENDPOINT}"
+      remoteBuild: true
+      buildArgs:
+        - "--platform=linux/amd64"
     env:
       - AZURE_OPENAI_ENDPOINT
       - AZURE_OPENAI_API_KEY
@@ -49,11 +52,14 @@ services:
 ```yaml
 services:
   my-node-app:
+    project: "./src/my-node-app"
     language: js
     host: containerapp
     docker:
-      path: ./src/my-node-app
-      context: ./src/my-node-app
+      registry: "${AZURE_CONTAINER_REGISTRY_ENDPOINT}"
+      remoteBuild: true
+      buildArgs:
+        - "--platform=linux/amd64"
     env:
       - NODE_ENV
       - PORT
@@ -65,11 +71,14 @@ services:
 ```yaml
 services:
   my-gradio-app:
+    project: "./src/my-gradio-app"
     language: python
     host: containerapp
     docker:
-      path: ./src/my-gradio-app
-      context: ./src/my-gradio-app
+      registry: "${AZURE_CONTAINER_REGISTRY_ENDPOINT}"
+      remoteBuild: true
+      buildArgs:
+        - "--platform=linux/amd64"
     env:
       - AZURE_OPENAI_ENDPOINT
       - AZURE_OPENAI_API_KEY

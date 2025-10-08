@@ -142,11 +142,31 @@ Update the root `azure.yaml` file to include the new Python application as a ser
   - Service name matching the application directory name
   - Language: python
   - Host: containerapp
-  - Docker build context pointing to the application directory
+  - Docker configuration with:
+    - Registry: `"${AZURE_CONTAINER_REGISTRY_ENDPOINT}"`
+    - Remote builds enabled: `remoteBuild: true`
+    - Build arguments for cross-platform compatibility
   - Environment variables for Azure Monitor integration
 - Ensure proper service dependencies if needed
 - Configure resource group and location references
 - Add any required environment-specific configurations
+
+Example service configuration:
+```yaml
+services:
+  my-python-app:
+    project: "./src/my-python-app"
+    language: python
+    host: containerapp
+    docker:
+      registry: "${AZURE_CONTAINER_REGISTRY_ENDPOINT}"
+      remoteBuild: true
+      buildArgs:
+        - "--platform=linux/amd64"
+    env:
+      - AZURE_OPENAI_ENDPOINT
+      - APPLICATION_INSIGHTS_CONNECTION_STRING
+```
 
 ## Technical Requirements
 

@@ -220,7 +220,10 @@ Update the root `azure.yaml` file to include the new Gradio application as a ser
   - Service name matching the application directory name
   - Language: python
   - Host: containerapp
-  - Docker build context pointing to the application directory
+  - Docker configuration with:
+    - Registry: `"${AZURE_CONTAINER_REGISTRY_ENDPOINT}"`
+    - Remote builds enabled: `remoteBuild: true`
+    - Build arguments for cross-platform compatibility
   - Environment variables for AI service integration (API keys, endpoints)
   - Port configuration for Gradio server (typically 7860)
 - Ensure proper service dependencies if needed
@@ -228,6 +231,25 @@ Update the root `azure.yaml` file to include the new Gradio application as a ser
 - Add ingress configuration for external access
 - Configure scaling rules for traffic management
 - Add any required environment-specific configurations
+
+Example service configuration:
+```yaml
+services:
+  my-gradio-app:
+    project: "./src/my-gradio-app"
+    language: python
+    host: containerapp
+    docker:
+      registry: "${AZURE_CONTAINER_REGISTRY_ENDPOINT}"
+      remoteBuild: true
+      buildArgs:
+        - "--platform=linux/amd64"
+    env:
+      - AZURE_OPENAI_ENDPOINT
+      - AZURE_OPENAI_API_KEY
+      - GRADIO_SERVER_PORT=7860
+      - APPLICATION_INSIGHTS_CONNECTION_STRING
+```
 
 ## Technical Requirements
 

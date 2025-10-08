@@ -10,17 +10,32 @@ infra:
   module: main
   parameters: main.parameters.json
 
+# Platform configuration for Azure Container Apps
+platform:
+  type: devcenter
+
 services:
-  # Add your services here
-  # Example for Container Apps:
+  # Example service - replace with your actual services
+  example-app:
+    project: "./src/example-app"
+    language: python
+    host: containerapp
+    docker:
+      remoteBuild: true
+  
+  # Additional service examples with remote builds:
   # web:
   #   project: "./src/web"
   #   language: js
   #   host: containerapp
+  #   docker:
+  #     remoteBuild: true
   # api:
-  #   project: "./src/api"
+  #   project: "./src/api"  
   #   language: python
   #   host: containerapp
+  #   docker:
+  #     remoteBuild: true
 
 # Hooks allow you to run scripts at various points in the azd workflow
 # Using Python with uv for better dependency management

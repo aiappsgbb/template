@@ -80,10 +80,30 @@ Update the root `azure.yaml` file to include the new Node.js application as a se
   - Service name matching the application directory name
   - Language: js
   - Host: containerapp
-  - Docker build context pointing to the application directory
+  - Docker configuration with:
+    - Registry: `"${AZURE_CONTAINER_REGISTRY_ENDPOINT}"`
+    - Remote builds enabled: `remoteBuild: true`
+    - Build arguments for cross-platform compatibility
   - Environment variables for application configuration
 - Ensure proper service dependencies if needed
 - Configure resource group and location references
 - Add any required environment-specific configurations
+
+Example service configuration:
+```yaml
+services:
+  my-node-app:
+    project: "./src/my-node-app"
+    language: js
+    host: containerapp
+    docker:
+      registry: "${AZURE_CONTAINER_REGISTRY_ENDPOINT}"
+      remoteBuild: true
+      buildArgs:
+        - "--platform=linux/amd64"
+    env:
+      - NODE_ENV
+      - APPLICATION_INSIGHTS_CONNECTION_STRING
+```
 
 The application should be production-ready with proper TypeScript configuration, error handling, structured logging using Winston (never use console.log in production), and testing setup.
