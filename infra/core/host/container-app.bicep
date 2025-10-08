@@ -52,6 +52,10 @@ param containerPort int = 80
 @description('Environment variables for the container')
 param environmentVariables array = []
 
+// NOTE: When using managed identities with Azure services, always include AZURE_CLIENT_ID
+// environment variable to specify which managed identity to use for authentication.
+// Example: { name: 'AZURE_CLIENT_ID', value: userAssignedIdentity.outputs.clientId }
+
 @description('CPU and memory resources')
 param resources object = {
   cpu: 1

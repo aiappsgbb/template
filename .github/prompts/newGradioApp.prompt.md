@@ -1,13 +1,17 @@
 ---
 mode: 'agent'
-model: Auto (copilot)
-tools: ['githubRepo', 'search/codebase']
-description: 'Create a new Gradio application for interactive UIs'
+model: Claude Sonnet 4 (copilot)
+tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCommands']
+description: 'Create a new Gradio application for interactive UIs and AI demos following best practices'
 ---
 
 # Create New Gradio Application
 
-Create a new Gradio application using uv package manager under the src folder for interactive user interfaces and AI demos.
+- Create a new Gradio application using uv package manager under the src folder for interactive user interfaces and AI demos.
+- Ensure you create a new branch for this work with naming feature/add-${input:appName:my-gradio-app}
+- Make sure to use all the provided tools to actually create folders and files with the required content.
+
+**Application Name**: ${input:appName:my-gradio-app}
 
 ## Directory Structure
 
@@ -15,7 +19,7 @@ Create the following directory structure:
 
 ```text
 src/
-├── <gradio-app>/
+├── ${input:appName}/
 │   ├── pyproject.toml
 │   ├── README.md
 │   ├── .python-version
@@ -47,11 +51,20 @@ src/
 
 Generate a `pyproject.toml` file with:
 
-- Project metadata (name, version, description, authors)
+- Project metadata (name: "${input:appName}", version, description, authors)
 - Python version requirement (>=3.11)
-- Dependencies including: gradio, openai, azure-openai, httpx, python-dotenv, pydantic, pydantic-settings
-- Optional AI dependencies: langchain, transformers, torch, numpy, pandas, pillow
-- Development dependencies: pytest, pytest-asyncio, black, ruff, mypy
+- Dependencies with safe version pinning (no major version upgrades):
+  - gradio>=5.0.0,<6.0.0 (pin major version to prevent breaking changes)
+  - pydantic>=2.9.0,<3.0.0, pydantic-settings>=2.6.0,<3.0.0
+  - python-dotenv>=1.0.0,<2.0.0, httpx>=0.27.0,<0.28.0
+- Azure integration dependencies:
+  - azure-identity>=1.19.0,<2.0.0
+  - azure-openai>=1.50.0,<2.0.0 (if using Azure OpenAI)
+- Optional AI dependencies:
+  - openai>=1.51.0,<2.0.0, langchain>=0.3.0,<0.4.0
+  - transformers>=4.45.0,<5.0.0, torch>=2.4.0,<3.0.0
+  - numpy>=1.26.0,<2.0.0, pandas>=2.2.0,<3.0.0, pillow>=10.4.0,<11.0.0
+- Development dependencies: pytest>=8.3.0,<9.0.0, pytest-asyncio>=0.24.0,<0.25.0, black>=24.10.0,<25.0.0, ruff>=0.7.0,<0.8.0, mypy>=1.11.0,<2.0.0
 - Build system configuration for uv
 - Tool configurations for ruff, black, mypy, and pytest
 
@@ -120,6 +133,33 @@ Create a configuration module using pydantic-settings with:
 - Logging configuration
 - Proper type hints and defaults
 - Environment variable loading
+- DO REMEMBER to invoke load_dotenv(override=True) at the beginning!
+- Azure credential management using ChainedTokenCredential best practice
+
+Include a standard Azure credential helper function:
+```python
+from azure.identity import AzureDeveloperCliCredential, ManagedIdentityCredential, ChainedTokenCredential
+
+def get_azure_credential() -> ChainedTokenCredential:
+    """Get Azure credential using best practice chain.
+    
+    Returns:
+        ChainedTokenCredential that tries Azure Developer CLI first, then Managed Identity.
+        This works for both local development (azd) and production (Container Apps).
+    """
+    return ChainedTokenCredential(
+        AzureDeveloperCliCredential(),  # tries Azure Developer CLI (azd) for local development
+        ManagedIdentityCredential()     # fallback to managed identity for production
+    )
+```
+
+This approach provides:
+- Seamless local development experience (works with azd specifically)
+- Production readiness (automatically uses managed identity in Azure Container Apps)
+- No credential configuration needed
+- Consistent authentication pattern across all Azure services
+
+**Important**: Always ensure `AZURE_CLIENT_ID` environment variable is set in Azure Container Apps to specify which managed identity to use for authentication.
 
 ### 8. utils/logging_config.py
 
@@ -151,13 +191,53 @@ Create an AI client module with:
 Create a multi-stage Dockerfile optimized for Gradio with:
 
 - Multi-stage build for smaller production images
-- Python 3.11+ base image
+- Python 3.11+ base image (use Azure Linux base)
 - uv for fast dependency installation
 - Non-root user for security
 - Proper layer caching
 - Health check configuration
 - Gradio-specific optimizations
 - GPU support (optional)
+
+```dockerfile
+# Dockerfile structure for Gradio
+FROM mcr.microsoft.com/azurelinux/base/python:3.12
+WORKDIR /app
+
+# Install CA certificates
+RUN tdnf install -y ca-certificates && \
+    update-ca-trust enable && \
+    update-ca-trust extract && \
+    tdnf clean all
+
+# Set SSL_CERT_FILE for Python
+ENV SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+
+# Install uv for dependency management
+COPY --from=ghcr.io/astral-sh/uv:0.7.8 /uv /uvx /bin/
+
+# Copy dependency files
+COPY pyproject.toml uv.lock* ./
+
+# Install dependencies
+RUN uv sync --locked --no-dev
+
+# Copy application code
+COPY . .
+
+# Expose port 7860 for Gradio (or 80 for Azure Container Apps)
+EXPOSE 80
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV GRADIO_SERVER_NAME=0.0.0.0
+ENV GRADIO_SERVER_PORT=80
+
+WORKDIR /app
+
+# Run Gradio application
+CMD ["uv", "run", "python", "app.py"]
+```
 
 ### 11. .dockerignore
 
@@ -217,15 +297,14 @@ Update the root `azure.yaml` file to include the new Gradio application as a ser
 
 - Add a new service entry under the `services` section
 - Configure the service with:
-  - Service name matching the application directory name
+  - Service name: "${input:appName}"
   - Language: python
   - Host: containerapp
   - Docker configuration with:
-    - Registry: `"${AZURE_CONTAINER_REGISTRY_ENDPOINT}"`
     - Remote builds enabled: `remoteBuild: true`
-    - Build arguments for cross-platform compatibility
-  - Environment variables for AI service integration (API keys, endpoints)
-  - Port configuration for Gradio server (typically 7860)
+  - Environment variables for AI service integration and Azure Monitor
+  - **Critical**: Always include `AZURE_CLIENT_ID` environment variable for managed identity authentication
+  - Port configuration for Gradio server (port 80 for Azure Container Apps)
 - Ensure proper service dependencies if needed
 - Configure resource group and location references
 - Add ingress configuration for external access
@@ -235,20 +314,95 @@ Update the root `azure.yaml` file to include the new Gradio application as a ser
 Example service configuration:
 ```yaml
 services:
-  my-gradio-app:
-    project: "./src/my-gradio-app"
+  ${input:appName}:
+    project: "./src/${input:appName}"
     language: python
     host: containerapp
     docker:
-      registry: "${AZURE_CONTAINER_REGISTRY_ENDPOINT}"
       remoteBuild: true
-      buildArgs:
-        - "--platform=linux/amd64"
-    env:
-      - AZURE_OPENAI_ENDPOINT
-      - AZURE_OPENAI_API_KEY
-      - GRADIO_SERVER_PORT=7860
-      - APPLICATION_INSIGHTS_CONNECTION_STRING
+```
+
+### 16. Infrastructure Configuration
+
+Update the `infra/main.bicep` file to include a new container app module for the Gradio application:
+
+- Add a new module declaration using the `infra/core/host/container-app.bicep` template
+- Configure the module with:
+  - Unique name for the container app (based on app name and environment)
+  - Location parameter reference
+  - Tags from the main template
+  - Container Apps Environment ID reference
+  - Container Registry name reference
+  - User Assigned Identity ID for ACR access
+  - Managed Identity Principal ID for RBAC
+  - GitHub Actions parameter for deployment context
+  - Container image parameter (will be updated during deployment)
+  - Environment variables specific to the Gradio application
+  - Resource allocation (CPU and memory)
+  - Container port (80 for Azure Container Apps)
+
+Example module configuration:
+```bicep
+// ${input:appName} Gradio Application
+module ${input:appName}App 'core/host/container-app.bicep' = {
+  name: '${input:appName}-app'
+  params: {
+    name: '${abbrs.appContainerApps}${input:appName}-${environmentName}'
+    location: location
+    tags: tags
+    containerAppsEnvironmentId: containerAppsEnvironment.outputs.id
+    containerRegistryName: containerRegistry.outputs.name
+    userAssignedIdentityId: userAssignedIdentity.outputs.id
+    managedIdentityPrincipalId: principalId
+    githubActions: githubActions
+    containerImage: ${input:appName}AppImage
+    containerPort: 80
+    environmentVariables: [
+      {
+        name: 'AZURE_CLIENT_ID'
+        value: userAssignedIdentity.outputs.clientId
+      }
+      {
+        name: 'APPLICATION_INSIGHTS_CONNECTION_STRING'
+        value: monitoring.outputs.applicationInsightsConnectionString
+      }
+      {
+        name: 'AZURE_KEY_VAULT_ENDPOINT'
+        value: keyVault.outputs.endpoint
+      }
+      {
+        name: 'GRADIO_SERVER_NAME'
+        value: '0.0.0.0'
+      }
+      {
+        name: 'GRADIO_SERVER_PORT'
+        value: '80'
+      }
+      {
+        name: 'LOG_LEVEL'
+        value: 'INFO'
+      }
+    ]
+    resources: {
+      cpu: 2
+      memory: '4Gi'
+    }
+  }
+}
+```
+
+- Add a parameter for the container image at the top of main.bicep:
+```bicep
+@description('Container image for ${input:appName} Gradio application')
+param ${input:appName}AppImage string = 'mcr.microsoft.com/k8se/quickstart:latest'
+```
+
+- Add output values for the new container app:
+```bicep
+// ${input:appName} App Outputs
+output ${upper(replace("${input:appName}", '-', '_'))}_APP_ENDPOINT string = ${input:appName}App.outputs.fqdn
+output ${upper(replace("${input:appName}", '-', '_'))}_APP_NAME string = ${input:appName}App.outputs.name
+output ${upper(replace("${input:appName}", '-', '_'))}_APP_ID string = ${input:appName}App.outputs.id
 ```
 
 ## Technical Requirements

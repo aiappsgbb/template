@@ -15,13 +15,6 @@ platform:
   type: devcenter
 
 services:
-  # Example service - replace with your actual services
-  example-app:
-    project: "./src/example-app"
-    language: python
-    host: containerapp
-    docker:
-      remoteBuild: true
   
   # Additional service examples with remote builds:
   # web:

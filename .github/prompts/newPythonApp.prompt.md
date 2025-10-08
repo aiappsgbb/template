@@ -1,13 +1,15 @@
 ---
 mode: 'agent'
-model: Auto (copilot)
-tools: ['githubRepo', 'search/codebase']
-description: 'Create a new Python application using uv package manager'
+model: Claude Sonnet 4 (copilot)
+tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCommands']
+description: 'Create a new Python application using uv package manager following best practices and a simplified structure.'
 ---
 
 # Create New Python Application
 
-Create a new Python application using uv package manager under the src folder with a simplified structure.
+- Create a new Python application using uv package manager under the src folder with a simplified structure.
+- Ensure you create a new branch for this work with naming feature/add-${input:appName:my-python-app}
+- Make sure to use all the provided tools to actually create folders and files with the required content.
 
 **Application Name**: ${input:appName:my-python-app}
 
@@ -220,6 +222,8 @@ This approach provides:
 - No credential configuration needed
 - Consistent authentication pattern across all Azure services
 
+**Important**: Always ensure `AZURE_CLIENT_ID` environment variable is set in Azure Container Apps to specify which managed identity to use for authentication.
+
 ### 8. utils/tracing.py
 
 Create an OpenTelemetry tracing module with:
@@ -268,6 +272,7 @@ Update the root `azure.yaml` file to include the new Python application as a ser
   - Docker configuration with:
     - Remote builds enabled: `remoteBuild: true`
   - Environment variables for Azure Monitor integration
+  - **Critical**: Always include `AZURE_CLIENT_ID` environment variable for managed identity authentication
 - Ensure proper service dependencies if needed
 - Configure resource group and location references
 - Add any required environment-specific configurations

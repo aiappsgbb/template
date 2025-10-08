@@ -197,13 +197,17 @@ module openai './core/ai/azure-openai.bicep' = {
   // ... parameters
 }
 
-// Use outputs in other resources
+Use the outputs in other resources
 resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   // ... other configuration
   properties: {
     template: {
       containers: [{
         env: [
+          {
+            name: 'AZURE_CLIENT_ID'
+            value: userAssignedIdentity.outputs.clientId
+          }
           {
             name: 'AZURE_OPENAI_ENDPOINT'
             value: openai.outputs.endpoint
@@ -244,6 +248,7 @@ az deployment sub create \
 2. **Cross-Subscription Support**: Handles resources in different subscriptions/resource groups
 3. **Managed Identity**: Uses managed identity for secure, credential-free authentication
 4. **Network Security**: Supports network access controls and custom domain configuration
+5. **AZURE_CLIENT_ID**: Always set this environment variable in Azure Container Apps to specify which managed identity to use
 
 ## Troubleshooting
 
