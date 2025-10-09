@@ -48,11 +48,14 @@ This file defines AI agents and their capabilities for the Azure Template Projec
 
 **Capabilities**:
 
-- Create Python applications using modern tooling (uv, FastAPI)
-- Develop Node.js/TypeScript applications with Express
-- Implement C#/.NET applications following best practices
-- Design RESTful APIs and microservices
+- Create Python applications using modern tooling (uv, FastAPI, Gradio, Streamlit)
+- Develop Node.js/TypeScript applications with Express and React
+- Build ASP.NET Core Web APIs using .NET 9 with latest language features
+- Build React applications with Vite, Tailwind CSS, and Application Insights
+- Implement interactive AI applications with Gradio and Streamlit
+- Design RESTful APIs and microservices with comprehensive observability
 - Configure CI/CD pipelines and testing frameworks
+- Implement data science applications with visualization and analytics
 
 **Context Files**:
 
@@ -66,10 +69,15 @@ This file defines AI agents and their capabilities for the Azure Template Projec
 
 **Specializations**:
 
-- FastAPI and modern Python development
-- TypeScript and Node.js ecosystem
-- Containerized application deployment
-- Testing and quality assurance
+- FastAPI and modern Python development with async patterns
+- ASP.NET Core Web APIs with .NET 9 and latest C# language features
+- Gradio and Streamlit for AI/ML application interfaces
+- TypeScript, Node.js, and React ecosystem with modern tooling
+- React applications with Vite, Tailwind CSS, and comprehensive state management
+- Data science applications with visualization and analytics
+- Containerized application deployment with multi-stage Docker builds
+- Testing and quality assurance with comprehensive coverage
+- OpenTelemetry integration for distributed tracing and monitoring
 
 ### DevOps Engineer
 
@@ -144,8 +152,10 @@ template/
 │   ├── prompts/                  # GitHub Copilot prompt files
 │   │   ├── newPythonApp.prompt.md       # Python FastAPI app creation
 │   │   ├── newNodeApp.prompt.md         # Node.js/TypeScript app creation
+│   │   ├── newDotNetApp.prompt.md       # ASP.NET Core Web API app creation
 │   │   ├── newReactApp.prompt.md        # React + Vite + Tailwind app creation
 │   │   ├── newGradioApp.prompt.md       # Gradio AI demo app creation
+│   │   ├── newStreamlitApp.prompt.md    # Streamlit data science app creation
 │   │   ├── ipCompliance.prompt.md       # IP compliance validation
 │   │   ├── setupInfra.prompt.md         # Infrastructure setup
 │   │   ├── addAzdService.prompt.md      # Service addition to azd
@@ -213,8 +223,15 @@ template/
 - **AI/ML**: Azure AI Foundry, Azure OpenAI, Azure AI Search
 - **Data**: Azure Cosmos DB, Azure Storage
 - **Security**: Azure Key Vault, Managed Identities
-- **Monitoring**: Azure Monitor, Application Insights
-- **Development**: Python (uv), Node.js/TypeScript, C#/.NET
+- **Monitoring**: Azure Monitor, Application Insights, OpenTelemetry
+- **Development**:
+  - **Python**: uv package manager, FastAPI, Gradio, Streamlit, pytest
+  - **Node.js/TypeScript**: npm, Express, React, Vite, Jest, Vitest
+  - **.NET**: .NET 9 SDK, ASP.NET Core, Entity Framework Core, xUnit
+  - **Frontend**: React, Vite, Tailwind CSS, Application Insights React plugin
+  - **AI/ML Interfaces**: Gradio for demos, Streamlit for data science
+- **Build Tools**: Docker multi-stage builds, Azure Linux base images
+- **Testing**: Comprehensive test coverage with framework-specific tools
 
 ### Infrastructure as Code (Bicep) Best Practices
 
@@ -342,13 +359,90 @@ if __name__ == '__main__':
     main()
 ```
 
+### Application Development Patterns
+
+**Python Applications**:
+
+- **FastAPI Services**: Production-ready APIs with uvicorn (dev) and gunicorn (production)
+- **Gradio Applications**: Interactive AI demos with custom components and authentication
+- **Streamlit Applications**: Multi-page data science applications with real-time visualization
+- **Configuration**: pydantic-settings with environment variable management
+- **Package Management**: uv for fast dependency installation and virtual environment management
+
+**Node.js/TypeScript Applications**:
+
+- **Express Services**: RESTful APIs with comprehensive middleware and error handling
+- **React Applications**: Modern frontends with Vite, Tailwind CSS, and Context API
+- **Configuration**: Environment-based configuration with type-safe interfaces
+- **Package Management**: npm with proper dependency version management
+- **Build Tools**: Vite for fast development and optimized production builds
+
+**.NET Applications**:
+
+- **ASP.NET Core Web APIs**: Production-ready APIs with minimal hosting model and dependency injection
+- **Configuration**: Strongly-typed configuration with IOptions pattern and appsettings.json
+- **Middleware Pipeline**: Custom middleware for logging, exception handling, and request processing
+- **Dependency Injection**: Built-in DI container with service registration and lifecycle management
+- **Testing**: Unit and integration testing with xUnit, Test Host, and Web Application Factory
+
+**Common Patterns Across All Applications**:
+
+- **Authentication**: ChainedTokenCredential for seamless local/production authentication
+- **Observability**: OpenTelemetry tracing with Azure Monitor integration
+- **Configuration**: Environment-based configuration with proper type validation
+- **Error Handling**: Structured error responses with appropriate HTTP status codes
+- **Health Checks**: Container-ready health endpoints for orchestration
+- **API Integration**: HTTPx (Python) or axios (Node.js) with proper retry logic
+
+**AI/ML Integration Patterns**:
+
+- **Azure OpenAI**: Consistent client configuration across all application types
+- **Streaming Responses**: Real-time AI responses in chat interfaces
+- **Context Management**: Conversation state management and history
+- **File Processing**: Secure file upload and AI-powered analysis
+- **Visualization**: Interactive charts and real-time data updates
+
 ### Development Standards
 
-- **Code Quality**: Linting, formatting, type checking
-- **Testing**: Unit, integration, and end-to-end tests
-- **Security**: SAST/DAST scanning, credential management
-- **Documentation**: Inline comments, README files, architecture diagrams
-- **Logging**: Use Python logging module, avoid print statements, structured logging with proper levels
+**Code Quality & Type Safety**:
+
+- **Linting & Formatting**: ESLint/Prettier for TypeScript, Ruff/Black for Python
+- **Type Safety**: Comprehensive TypeScript usage, Python type hints throughout
+- **Testing**: Jest (Node.js/React), pytest (Python), Vitest (Vite), comprehensive coverage
+- **Code Structure**: Modular architecture with clear separation of concerns
+- **Dependency Management**: Safe version pinning with >= and < operators to prevent major version upgrades
+
+**Security & Authentication**:
+
+- **Azure Authentication**: ChainedTokenCredential pattern (AzureDeveloperCliCredential + ManagedIdentityCredential)
+- **Environment Variables**: Always include AZURE_CLIENT_ID for managed identity authentication
+- **Input Validation**: Comprehensive validation and sanitization for all user inputs
+- **SAST/DAST**: Security scanning and vulnerability assessment
+- **Credential Management**: Never hardcode secrets, use Azure Key Vault integration
+
+**Logging & Observability**:
+
+- **Structured Logging**: Python logging module, Winston for Node.js, never use print() or console.log()
+- **Log Levels**: Appropriate use of DEBUG, INFO, WARNING, ERROR, CRITICAL levels
+- **JSON Format**: Structured logging for production environments
+- **OpenTelemetry**: Distributed tracing with Azure Monitor integration
+- **Performance Monitoring**: Application Insights integration for all applications
+
+**Containerization & Deployment**:
+
+- **Multi-stage Builds**: Optimized Dockerfiles with Azure Linux base images
+- **Non-root Users**: Security-first container configurations
+- **Health Checks**: Proper container health monitoring
+- **Port Configuration**: Port 80 for Azure Container Apps deployment
+- **Resource Optimization**: Appropriate CPU and memory allocation
+
+**Documentation & Compliance**:
+
+- **Comprehensive README**: Setup, configuration, deployment instructions
+- **Inline Documentation**: Clear comments and docstrings
+- **Architecture Diagrams**: Visual representation of system design
+- **API Documentation**: OpenAPI/Swagger documentation where applicable
+- **IP Compliance**: Validation against ip-metadata.schema.json
 
 ## Agent Collaboration Patterns
 
