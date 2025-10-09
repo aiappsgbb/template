@@ -318,6 +318,8 @@ public static class AzureCredentialHelper
 
 **Important**: Always ensure `AZURE_CLIENT_ID` environment variable is set in Azure Container Apps to specify which managed identity to use for authentication.
 
+**CRITICAL**: Follow [Azure Best Practices](../azure-bestpractices.md) - NEVER use API keys for Azure services. All authentication must use Entra ID with managed identities.
+
 ### 8. Extensions/ServiceCollectionExtensions.cs
 
 Create service registration extensions:

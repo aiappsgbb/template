@@ -79,6 +79,7 @@ When using these prompts, ensure adherence to the following standards:
 - **Configuration**: Always update `azure.yaml` when creating new applications to ensure proper deployment configuration
 - **Infrastructure**: Update `infra/main.bicep` with new container app modules and proper parameter configuration
 - **Monitoring**: Integrate Application Insights with OpenTelemetry for comprehensive observability
+- **Security**: **NEVER use API keys** - follow [Azure Best Practices](./azure-bestpractices.md) for secure authentication
 
 ### Containerization
 - **Multi-stage Builds**: Use optimized Dockerfiles with multi-stage builds for smaller production images

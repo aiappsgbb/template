@@ -419,6 +419,7 @@ if __name__ == '__main__':
 - **Input Validation**: Comprehensive validation and sanitization for all user inputs
 - **SAST/DAST**: Security scanning and vulnerability assessment
 - **Credential Management**: Never hardcode secrets, use Azure Key Vault integration
+- **Zero API Keys**: **NEVER use API keys for Azure services** - follow [Azure Best Practices](../.github/azure-bestpractices.md)
 
 **Logging & Observability**:
 

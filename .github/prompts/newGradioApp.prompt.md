@@ -135,6 +135,7 @@ Create a configuration module using pydantic-settings with:
 - Environment variable loading
 - DO REMEMBER to invoke load_dotenv(override=True) at the beginning!
 - Azure credential management using ChainedTokenCredential best practice
+- **CRITICAL**: Follow [Azure Best Practices](../azure-bestpractices.md) - NEVER use API keys for Azure services
 
 Include a standard Azure credential helper function:
 ```python

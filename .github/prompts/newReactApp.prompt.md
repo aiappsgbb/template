@@ -396,6 +396,7 @@ Create a custom hook for API calls with configuration:
 - Error handling
 - Request/response interceptors
 - Retry logic
+- **CRITICAL**: Follow [Azure Best Practices](../azure-bestpractices.md) when integrating with Azure services
 
 ### 17. services/api.ts
 

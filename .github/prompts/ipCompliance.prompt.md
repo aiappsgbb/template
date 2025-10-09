@@ -1,7 +1,7 @@
 ---
 mode: 'agent'
 model: Claude Sonnet 4 (copilot)
-tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCommands']
+tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands']
 description: 'Comprehensive IP compliance checker for Azure Developer CLI templates'
 ---
 
@@ -18,6 +18,7 @@ This assessment covers multiple compliance areas:
 - ✅ **Infrastructure as Code**: Checks Bicep templates and parameters
 - ✅ **Deployment Readiness**: Verifies the repository can be deployed via `azd up`
 - ✅ **Security & Best Practices**: Reviews security configurations and standards
+- ✅ **Azure Security Compliance**: Validates adherence to [Azure Best Practices](../azure-bestpractices.md)
 - ✅ **Documentation Quality**: Ensures comprehensive documentation
 
 ## Compliance Checks

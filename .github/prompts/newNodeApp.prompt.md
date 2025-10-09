@@ -167,6 +167,7 @@ Create a configuration module with:
 - OpenTelemetry tracing settings
 - Proper type definitions and defaults
 - Azure credential management using best practices
+- **CRITICAL**: Follow [Azure Best Practices](../azure-bestpractices.md) - NEVER use API keys for Azure services
 
 Include a standard Azure credential helper function:
 ```typescript

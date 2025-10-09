@@ -1,7 +1,7 @@
 ---
 mode: 'agent'
 model: Auto (copilot)
-tools: ['githubRepo', 'search/codebase']
+tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands']
 description: 'Add a new service to azure.yaml configuration'
 ---
 
@@ -43,9 +43,15 @@ services:
         - "--platform=linux/amd64"
     env:
       - AZURE_OPENAI_ENDPOINT
-      - AZURE_OPENAI_API_KEY
       - APPLICATION_INSIGHTS_CONNECTION_STRING
+      - AZURE_CLIENT_ID  # REQUIRED for managed identity
       - LOG_LEVEL
+
+# ⚠️ SECURITY: Follow Azure Best Practices
+# NEVER include API keys in environment variables:
+# ❌ AZURE_OPENAI_API_KEY (FORBIDDEN)
+# ❌ AZURE_AI_SEARCH_KEY (FORBIDDEN)
+# See: ../azure-bestpractices.md
 ```
 
 #### Node.js/TypeScript Services
