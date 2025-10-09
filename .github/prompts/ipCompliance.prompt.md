@@ -12,7 +12,7 @@ Perform a comprehensive compliance assessment of the repository to ensure it mee
 ## Overview
 
 This assessment covers multiple compliance areas:
-- ✅ **IP Metadata Compliance**: Validates ip-metadata.json against schema
+- ✅ **IP Metadata Compliance**: Validates .github/ip-metadata.json against schema
 - ✅ **Repository Structure**: Ensures proper folder organization and required files
 - ✅ **Azure Developer CLI Configuration**: Validates azure.yaml completeness
 - ✅ **Infrastructure as Code**: Checks Bicep templates and parameters
@@ -25,8 +25,8 @@ This assessment covers multiple compliance areas:
 
 ### 1. IP Metadata Validation
 
-**Check ip-metadata.json file:**
-- [ ] File exists in repository root
+**Check .github/ip-metadata.json file:**
+- [ ] File exists in .github directory
 - [ ] Validates against [.github/ip-metadata.schema.json](../ip-metadata.schema.json)
 - [ ] All required fields are present and properly formatted
 - [ ] Enum values match schema definitions
@@ -225,7 +225,7 @@ List potential issues or improvements with:
 For issues that can be automatically resolved, ask user permission before implementing fixes:
 
 ### Automatic Fixes Available:
-- [ ] Create missing ip-metadata.json with template structure
+- [ ] Create missing .github/ip-metadata.json with template structure
 - [ ] Add missing required files (README sections, .gitignore entries)
 - [ ] Fix azure.yaml configuration issues
 - [ ] Update Bicep templates to use AVM modules

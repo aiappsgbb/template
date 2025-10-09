@@ -11,6 +11,7 @@ This repository contains prompt files to help with common development tasks usin
 - **React App**: `/newReactApp` - Create a new React + Vite + Tailwind CSS application under src/
 - **Gradio App**: `/newGradioApp` - Create a new Gradio application for interactive UIs and AI demos under src/
 - **Streamlit App**: `/newStreamlitApp` - Create a new Streamlit application for data science UIs and AI demos under src/
+- **Agent App**: `/newAgentApp` - Create a new AI agent application using Microsoft Agent Framework under src/
 
 ### Infrastructure & Configuration
 - **Setup Infrastructure**: `/setupInfra` - Configure main.bicep with all relevant Azure modules
@@ -32,6 +33,7 @@ Examples:
 /newReactApp
 /newGradioApp
 /newStreamlitApp
+/newAgentApp
 /setupInfra
 /addAzdService
 /newReadme
@@ -47,6 +49,7 @@ All prompt files are located in `.github/prompts/` directory:
 - `newReactApp.prompt.md` - React + Vite + Tailwind CSS application creation
 - `newGradioApp.prompt.md` - Gradio application creation for interactive UIs
 - `newStreamlitApp.prompt.md` - Streamlit application creation for data science UIs
+- `newAgentApp.prompt.md` - Microsoft Agent Framework application creation
 - `setupInfra.prompt.md` - Infrastructure setup with Bicep
 - `addAzdService.prompt.md` - Azure Developer CLI service configuration
 - `newReadme.prompt.md` - README file generation

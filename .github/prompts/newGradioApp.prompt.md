@@ -49,24 +49,79 @@ src/
 
 ### 1. pyproject.toml
 
-Generate a `pyproject.toml` file with:
+Generate a `pyproject.toml` file with the following structure:
 
-- Project metadata (name: "${input:appName}", version, description, authors)
-- Python version requirement (>=3.11)
-- Dependencies with safe version pinning (no major version upgrades):
-  - gradio>=5.0.0,<6.0.0 (pin major version to prevent breaking changes)
-  - pydantic>=2.9.0,<3.0.0, pydantic-settings>=2.6.0,<3.0.0
-  - python-dotenv>=1.0.0,<2.0.0, httpx>=0.27.0,<0.28.0
-- Azure integration dependencies:
-  - azure-identity>=1.19.0,<2.0.0
-  - azure-openai>=1.50.0,<2.0.0 (if using Azure OpenAI)
-- Optional AI dependencies:
-  - openai>=1.51.0,<2.0.0, langchain>=0.3.0,<0.4.0
-  - transformers>=4.45.0,<5.0.0, torch>=2.4.0,<3.0.0
-  - numpy>=1.26.0,<2.0.0, pandas>=2.2.0,<3.0.0, pillow>=10.4.0,<11.0.0
-- Development dependencies: pytest>=8.3.0,<9.0.0, pytest-asyncio>=0.24.0,<0.25.0, black>=24.10.0,<25.0.0, ruff>=0.7.0,<0.8.0, mypy>=1.11.0,<2.0.0
-- Build system configuration for uv
-- Tool configurations for ruff, black, mypy, and pytest
+```toml
+[project]
+name = "${input:appName}"
+version = "0.1.0"
+description = "A Gradio application for interactive UIs and AI demos"
+authors = [
+    { name = "Your Name", email = "your.email@example.com" }
+]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+    "gradio>=5.0.0,<6.0.0",
+    "pydantic>=2.9.0,<3.0.0",
+    "pydantic-settings>=2.6.0,<3.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "httpx>=0.27.0,<0.28.0",
+    "azure-identity>=1.19.0,<2.0.0",
+    "azure-openai>=1.50.0,<2.0.0",
+    "openai>=1.51.0,<2.0.0",
+    "numpy>=1.26.0,<2.0.0",
+    "pandas>=2.2.0,<3.0.0",
+    "pillow>=10.4.0,<11.0.0",
+    "matplotlib>=3.9.0,<4.0.0",
+    "plotly>=5.24.0,<6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0,<9.0.0",
+    "pytest-asyncio>=0.24.0,<0.25.0",
+    "black>=24.10.0,<25.0.0",
+    "ruff>=0.7.0,<0.8.0",
+    "mypy>=1.11.0,<2.0.0",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+asyncio_mode = "auto"
+```
+
+Key features of this configuration:
+- Uses modern `[project]` table format for metadata
+- Safe dependency version pinning for Gradio and AI libraries
+- Separates development dependencies into optional group
+- Includes tool configurations for linting, formatting, and testing
+- Compatible with uv package manager
+- No build system needed for containerized applications
 
 ### 2. .python-version
 

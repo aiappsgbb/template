@@ -38,24 +38,78 @@ src/
 
 ### 1. pyproject.toml
 
-Generate a `pyproject.toml` file with:
+Generate a `pyproject.toml` file with the following structure:
 
-- Project metadata (name: "${input:appName}", version, description, authors)
-- Python version requirement (>=3.11)
-- Dependencies with safe version pinning (no major version upgrades):
-  - fastapi>=0.115.0,<0.116.0 (pin minor version to prevent breaking changes)
-  - uvicorn>=0.32.0,<0.33.0 (ASGI server for development)
-  - gunicorn>=23.0.0,<24.0.0 (WSGI/ASGI server for production)
-  - pydantic>=2.9.0,<3.0.0, pydantic-settings>=2.6.0,<3.0.0
-  - httpx>=0.27.0,<0.28.0, python-dotenv>=1.0.0,<2.0.0
-- OpenTelemetry dependencies with safe versioning:
-  - opentelemetry-api>=1.27.0,<2.0.0, opentelemetry-sdk>=1.27.0,<2.0.0
-  - opentelemetry-instrumentation-fastapi>=0.48.0,<0.49.0
-  - opentelemetry-instrumentation-httpx>=0.48.0,<0.49.0
-  - azure-monitor-opentelemetry-exporter>=1.0.0,<2.0.0
-- Development dependencies: pytest>=8.3.0,<9.0.0, pytest-asyncio>=0.24.0,<0.25.0, black>=24.10.0,<25.0.0, ruff>=0.7.0,<0.8.0, mypy>=1.11.0,<2.0.0
-- Build system configuration for uv
-- Tool configurations for ruff, black, mypy, and pytest
+```toml
+[project]
+name = "${input:appName}"
+version = "0.1.0"
+description = "A FastAPI application built with modern Python practices"
+authors = [
+    { name = "Your Name", email = "your.email@example.com" }
+]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0,<0.116.0",
+    "uvicorn>=0.32.0,<0.33.0",
+    "gunicorn>=23.0.0,<24.0.0",
+    "pydantic>=2.9.0,<3.0.0",
+    "pydantic-settings>=2.6.0,<3.0.0",
+    "httpx>=0.27.0,<0.28.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "azure-identity>=1.19.0,<2.0.0",
+    "opentelemetry-api>=1.27.0,<2.0.0",
+    "opentelemetry-sdk>=1.27.0,<2.0.0",
+    "opentelemetry-instrumentation-fastapi>=0.48.0,<0.49.0",
+    "opentelemetry-instrumentation-httpx>=0.48.0,<0.49.0",
+    "azure-monitor-opentelemetry-exporter>=1.0.0,<2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0,<9.0.0",
+    "pytest-asyncio>=0.24.0,<0.25.0",
+    "black>=24.10.0,<25.0.0",
+    "ruff>=0.7.0,<0.8.0",
+    "mypy>=1.11.0,<2.0.0",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+asyncio_mode = "auto"
+```
+
+Key features of this configuration:
+- Uses modern `[project]` table format for metadata
+- Safe dependency version pinning to prevent major version upgrades
+- Separates development dependencies into optional group
+- Includes tool configurations for linting, formatting, and testing
+- Compatible with uv package manager
 
 ### 2. .python-version
 

@@ -296,7 +296,7 @@ The template automatically detects the deployment context and assigns the approp
 
 ## IP Metadata Management
 
-The template includes intellectual property tracking via `ip-metadata.json`:
+The template includes intellectual property tracking via `.github/ip-metadata.json`:
 
 ```json
 {
@@ -309,7 +309,7 @@ The template includes intellectual property tracking via `ip-metadata.json`:
 }
 ```
 
-Schema validation is provided through `schemas/ip-metadata.schema.json` for consistent metadata management.
+Schema validation is provided through `.github/ip-metadata.schema.json` for consistent metadata management.
 
 ## AI Agent Configuration
 

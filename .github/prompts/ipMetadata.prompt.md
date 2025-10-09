@@ -5,10 +5,10 @@ tools: ['githubRepo', 'search/codebase']
 description: 'Create or update IP metadata file with standard structure'
 ---
 
-Create or update the ip-metadata.json file with standardized intellectual property metadata.
+Create or update the .github/ip-metadata.json file with standardized intellectual property metadata.
 
 ## Task
-Generate a comprehensive ip-metadata.json file that follows the schema defined in schemas/ip-metadata.schema.json.
+Generate a comprehensive .github/ip-metadata.json file that follows the schema defined in .github/ip-metadata.schema.json.
 
 ## Requirements
 

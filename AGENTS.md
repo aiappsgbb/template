@@ -53,6 +53,7 @@ This file defines AI agents and their capabilities for the Azure Template Projec
 - Build ASP.NET Core Web APIs using .NET 9 with latest language features
 - Build React applications with Vite, Tailwind CSS, and Application Insights
 - Implement interactive AI applications with Gradio and Streamlit
+- **Create AI agents using Microsoft Agent Framework with chat, workflow, and custom patterns**
 - Design RESTful APIs and microservices with comprehensive observability
 - Configure CI/CD pipelines and testing frameworks
 - Implement data science applications with visualization and analytics
@@ -72,6 +73,7 @@ This file defines AI agents and their capabilities for the Azure Template Projec
 - FastAPI and modern Python development with async patterns
 - ASP.NET Core Web APIs with .NET 9 and latest C# language features
 - Gradio and Streamlit for AI/ML application interfaces
+- **Microsoft Agent Framework for conversational AI, multi-agent workflows, and custom DAG processing**
 - TypeScript, Node.js, and React ecosystem with modern tooling
 - React applications with Vite, Tailwind CSS, and comprehensive state management
 - Data science applications with visualization and analytics
@@ -156,12 +158,14 @@ template/
 │   │   ├── newReactApp.prompt.md        # React + Vite + Tailwind app creation
 │   │   ├── newGradioApp.prompt.md       # Gradio AI demo app creation
 │   │   ├── newStreamlitApp.prompt.md    # Streamlit data science app creation
+│   │   ├── newAgentApp.prompt.md        # Microsoft Agent Framework app creation
 │   │   ├── ipCompliance.prompt.md       # IP compliance validation
 │   │   ├── setupInfra.prompt.md         # Infrastructure setup
 │   │   ├── addAzdService.prompt.md      # Service addition to azd
 │   │   └── newReadme.prompt.md          # README generation
 │   ├── workflows/                # CI/CD pipelines
 │   │   └── azure-infra.yml       # Unified deployment workflow
+│   ├── ip-metadata.json          # Intellectual Property metadata
 │   ├── ip-metadata.schema.json   # IP metadata validation schema
 │   └── copilot-instructions.md   # Copilot configuration
 ├── docs/                         # Documentation
@@ -209,7 +213,6 @@ template/
 ├── assets/                       # Static assets and documentation
 │   └── README.md
 ├── azure.yaml                    # Azure Developer CLI configuration
-├── ip-metadata.json             # Intellectual Property metadata
 ├── .gitignore                   # Git ignore patterns
 ├── LICENSE                      # License file
 ├── README.md                    # Main project documentation
@@ -230,6 +233,7 @@ template/
   - **.NET**: .NET 9 SDK, ASP.NET Core, Entity Framework Core, xUnit
   - **Frontend**: React, Vite, Tailwind CSS, Application Insights React plugin
   - **AI/ML Interfaces**: Gradio for demos, Streamlit for data science
+  - **AI Agents**: Microsoft Agent Framework for conversational AI and workflows
 - **Build Tools**: Docker multi-stage builds, Azure Linux base images
 - **Testing**: Comprehensive test coverage with framework-specific tools
 
@@ -366,6 +370,7 @@ if __name__ == '__main__':
 - **FastAPI Services**: Production-ready APIs with uvicorn (dev) and gunicorn (production)
 - **Gradio Applications**: Interactive AI demos with custom components and authentication
 - **Streamlit Applications**: Multi-page data science applications with real-time visualization
+- **Agent Framework Applications**: Conversational AI agents, multi-agent workflows, and custom DAG processing
 - **Configuration**: pydantic-settings with environment variable management
 - **Package Management**: uv for fast dependency installation and virtual environment management
 
@@ -397,6 +402,9 @@ if __name__ == '__main__':
 **AI/ML Integration Patterns**:
 
 - **Azure OpenAI**: Consistent client configuration across all application types
+- **Microsoft Agent Framework**: Chat agents, multi-agent workflows, and custom executors
+- **Agent Tools**: Function calling, file search, code interpretation, and custom tools
+- **Agent Middleware**: Security, logging, telemetry, and custom processing pipelines
 - **Streaming Responses**: Real-time AI responses in chat interfaces
 - **Context Management**: Conversation state management and history
 - **File Processing**: Secure file upload and AI-powered analysis
@@ -443,7 +451,7 @@ if __name__ == '__main__':
 - **Inline Documentation**: Clear comments and docstrings
 - **Architecture Diagrams**: Visual representation of system design
 - **API Documentation**: OpenAPI/Swagger documentation where applicable
-- **IP Compliance**: Validation against ip-metadata.schema.json
+- **IP Compliance**: Validation against .github/ip-metadata.schema.json
 
 ## Agent Collaboration Patterns
 
