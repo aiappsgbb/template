@@ -297,7 +297,9 @@ services:
       remoteBuild: true
 ```
 
-### 16. Infrastructure Configuration
+### 13. Infrastructure Configuration
+
+**Important**: Follow [Bicep Deployment Best Practices](../bicep-deployment-bestpractices.md) for all infrastructure changes.
 
 Update the `infra/main.bicep` file to include a new container app module for the Node.js application:
 

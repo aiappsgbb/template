@@ -6,6 +6,8 @@ description: 'Setup Azure infrastructure with Bicep'
 ---
 Configure the main.bicep file to set up a comprehensive Azure infrastructure using all available modules in the infra/core directory.
 
+**Critical**: Follow [Bicep Deployment Best Practices](../bicep-deployment-bestpractices.md) for all infrastructure components.
+
 1. Update the main.bicep file to include all modern Azure services:
 
 2. Uncomment and configure the following modules with proper dependencies:

@@ -17,6 +17,10 @@ This repository contains prompt files to help with common development tasks usin
 - **Setup Infrastructure**: `/setupInfra` - Configure main.bicep with all relevant Azure modules
 - **Add AZD Service**: `/addAzdService` - Add a new service configuration to azure.yaml
 
+### Best Practices Documentation
+- **[Azure Best Practices](azure-bestpractices.md)** - Security guidelines enforcing zero API keys policy
+- **[Bicep Deployment Best Practices](bicep-deployment-bestpractices.md)** - Infrastructure as Code guidelines for azd integration
+
 ### Documentation & Compliance
 - **Create README**: `/newReadme` - Generate a comprehensive README with standard IP structure
 - **IP Compliance**: `/ipCompliance` - Comprehensive compliance assessment for Azure Developer CLI templates

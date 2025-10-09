@@ -549,9 +549,11 @@ services:
       remoteBuild: true
 ```
 
-### 15. Infrastructure Configuration
+### 12. Infrastructure Configuration
 
-Update the `infra/main.bicep` file to include a new container app module for the ASP.NET Core application:
+**Important**: Follow [Bicep Deployment Best Practices](../bicep-deployment-bestpractices.md) for all infrastructure changes.
+
+Update the `infra/main.bicep` file to include a new container app module for the .NET API application:
 
 - Add a new module declaration using the `infra/core/host/container-app.bicep` template
 - Configure the module with:

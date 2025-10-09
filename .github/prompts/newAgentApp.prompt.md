@@ -605,6 +605,8 @@ services:
 
 ### 16. Infrastructure Configuration
 
+**Important**: Follow [Bicep Deployment Best Practices](../bicep-deployment-bestpractices.md) for all infrastructure changes.
+
 Update `infra/main.bicep` with Agent Framework container app:
 
 ```bicep

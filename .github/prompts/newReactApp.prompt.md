@@ -734,7 +734,9 @@ services:
       remoteBuild: true
 ```
 
-### 29. Infrastructure Configuration
+### 12. Infrastructure Configuration
+
+**Important**: Follow [Bicep Deployment Best Practices](../bicep-deployment-bestpractices.md) for all infrastructure changes.
 
 Update the `infra/main.bicep` file to include a new container app module for the React application:
 

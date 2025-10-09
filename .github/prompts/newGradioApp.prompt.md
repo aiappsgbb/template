@@ -380,6 +380,8 @@ services:
 
 ### 16. Infrastructure Configuration
 
+**Important**: Follow [Bicep Deployment Best Practices](../bicep-deployment-bestpractices.md) for all infrastructure changes.
+
 Update the `infra/main.bicep` file to include a new container app module for the Gradio application:
 
 - Add a new module declaration using the `infra/core/host/container-app.bicep` template

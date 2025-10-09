@@ -7,6 +7,8 @@ description: 'Add a new service to azure.yaml configuration'
 
 # Add Service to Azure Developer CLI Configuration
 
+**Important**: Follow [Bicep Deployment Best Practices](../bicep-deployment-bestpractices.md) for infrastructure updates.
+
 Add a new service to the `azure.yaml` file for deployment with Azure Developer CLI.
 
 ## Service Configuration Requirements

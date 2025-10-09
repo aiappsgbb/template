@@ -343,9 +343,11 @@ services:
       remoteBuild: true
 ```
 
-### 12. Infrastructure Configuration
+### 17. Infrastructure Configuration
 
-Update the `infra/main.bicep` file to include a new container app module for the Python application:
+**Important**: Follow [Bicep Deployment Best Practices](../bicep-deployment-bestpractices.md) for all infrastructure changes.
+
+Update the `infra/main.bicep` file to include a new container app module for the FastAPI application:
 
 - Add a new module declaration using the `infra/core/host/container-app.bicep` template
 - Configure the module with:
