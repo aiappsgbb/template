@@ -5,6 +5,28 @@ tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCo
 description: 'Create a new ASP.NET Core Web API application using .NET 9 following best practices and a simplified structure.'
 ---
 
+## Research Context (Optional - If Available)
+
+If research planning and collection templates were completed prior to this task, reference them here for implementation guidance:
+
+**Plan File Used**: ${input:planFile:[plan filename or N/A]}
+**Collection File Used**: ${input:collectionFile:[collection filename or N/A]}
+**Date**: [YYYY-MM-DD]
+**Collector**: ${input:collector:[Agent/User or N/A]}
+**Initial Prompt (verbatim)**: ${input:initialPrompt:[original research question or N/A]}
+**Referenced Research Plan**: ${input:researchPlan:[plan filename or N/A]}
+
+**Research Artifacts Location**: 
+- Plan: `.github/scratchpad/research-plan-[TIMESTAMP].md` (if exists)
+- Collection: `.github/scratchpad/research-collection-[TIMESTAMP].md` (if exists)
+
+**Implementation Notes**: 
+- Review research collection findings for .NET API patterns, libraries, and configurations
+- Use consolidated environment variables from collection template
+- Reference code snippets from findings for implementation
+- Validate against research gaps identified in collection phase
+
+---
 # Create New ASP.NET Core Web API Application
 
 - Create a new ASP.NET Core Web API application using .NET 9 under the src folder with a simplified structure.
@@ -432,233 +454,4 @@ public class HealthController(IHealthService healthService, ILogger<HealthContro
         return Ok(new ApiResponse<HealthResponse>
         {
             Success = true,
-            Message = "Health check completed",
-            Data = healthResponse
-        });
-    }
-}
-```
-
-### 11. Models/ApiResponse.cs
-
-Create standard API response models:
-
-```csharp
-namespace MyDotNetApp.Models;
-
-public record ApiResponse<T>
-{
-    public bool Success { get; init; }
-    public string Message { get; init; } = string.Empty;
-    public T? Data { get; init; }
-    public DateTime Timestamp { get; init; } = DateTime.UtcNow;
-}
-
-public record HealthResponse
-{
-    public string Status { get; init; } = string.Empty;
-    public string Version { get; init; } = string.Empty;
-    public DateTime Timestamp { get; init; } = DateTime.UtcNow;
-    public Dictionary<string, object> Details { get; init; } = new();
-}
-```
-
-### 12. appsettings.json
-
-Create application configuration:
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*",
-  "ApplicationName": "${input:appName}",
-  "Version": "1.0.0",
-  "Azure": {
-    "ApplicationInsightsConnectionString": "",
-    "KeyVaultEndpoint": "",
-    "ClientId": ""
-  },
-  "Serilog": {
-    "MinimumLevel": {
-      "Default": "Information",
-      "Override": {
-        "Microsoft": "Warning",
-        "Microsoft.Hosting.Lifetime": "Information"
-      }
-    },
-    "WriteTo": [
-      {
-        "Name": "Console",
-        "Args": {
-          "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"
-        }
-      }
-    ],
-    "Enrich": ["FromLogContext", "WithMachineName", "WithThreadId"]
-  }
-}
-```
-
-### 13. README.md
-
-Create a comprehensive `README.md` for the ASP.NET Core app with:
-
-- Project description
-- Prerequisites (.NET 9.0 SDK, Docker, Azure Application Insights)
-- Installation and setup instructions
-- Development workflow
-- Running the application (local and Docker)
-- Docker build and run instructions
-- Configuration options (including Azure Monitor setup)
-- API documentation and endpoints
-- Testing instructions
-- Container deployment guidance
-- Monitoring and observability setup
-- Azure Application Insights configuration
-
-### 14. Azure Developer CLI Configuration
-
-Update the root `azure.yaml` file to include the new ASP.NET Core application as a service:
-
-- Add a new service entry under the `services` section
-- Configure the service with:
-  - Service name: "${input:appName}"
-  - Language: dotnet
-  - Host: containerapp
-  - Docker configuration with:
-    - Remote builds enabled: `remoteBuild: true`
-  - Environment variables for Azure Monitor integration
-  - **Critical**: Always include `AZURE_CLIENT_ID` environment variable for managed identity authentication
-- Ensure proper service dependencies if needed
-- Configure resource group and location references
-- Add any required environment-specific configurations
-
-Example service configuration:
-```yaml
-services:
-  ${input:appName}:
-    project: "./src/${input:appName}"
-    language: dotnet
-    host: containerapp
-    docker:
-      remoteBuild: true
-```
-
-### 12. Infrastructure Configuration
-
-**Important**: Follow [Bicep Deployment Best Practices](../bicep-deployment-bestpractices.md) for all infrastructure changes.
-
-Update the `infra/main.bicep` file to include a new container app module for the .NET API application:
-
-- Add a new module declaration using the `infra/core/host/container-app.bicep` template
-- Configure the module with:
-  - Unique name for the container app (based on app name and environment)
-  - Location parameter reference
-  - Tags from the main template
-  - Container Apps Environment ID reference
-  - Container Registry name reference
-  - User Assigned Identity ID for ACR access
-  - Managed Identity Principal ID for RBAC
-  - GitHub Actions parameter for deployment context
-  - Container image parameter (will be updated during deployment)
-  - Environment variables specific to the ASP.NET Core application
-  - Resource allocation (CPU and memory)
-  - Container port (80 for Azure Container Apps)
-
-Example module configuration:
-```bicep
-// ${input:appName} ASP.NET Core Application
-module ${input:appName}App 'core/host/container-app.bicep' = {
-  name: '${input:appName}-app'
-  params: {
-    name: '${abbrs.appContainerApps}${input:appName}-${environmentName}'
-    location: location
-    tags: tags
-    containerAppsEnvironmentId: containerAppsEnvironment.outputs.id
-    containerRegistryName: containerRegistry.outputs.name
-    userAssignedIdentityId: userAssignedIdentity.outputs.id
-    managedIdentityPrincipalId: principalId
-    githubActions: githubActions
-    containerImage: ${input:appName}AppImage
-    containerPort: 80
-    environmentVariables: [
-      {
-        name: 'AZURE_CLIENT_ID'
-        value: userAssignedIdentity.outputs.clientId
-      }
-      {
-        name: 'APPLICATION_INSIGHTS_CONNECTION_STRING'
-        value: monitoring.outputs.applicationInsightsConnectionString
-      }
-      {
-        name: 'AZURE_KEY_VAULT_ENDPOINT'
-        value: keyVault.outputs.endpoint
-      }
-      {
-        name: 'ASPNETCORE_ENVIRONMENT'
-        value: 'Production'
-      }
-      {
-        name: 'ASPNETCORE_URLS'
-        value: 'http://+:80'
-      }
-      {
-        name: 'Logging__LogLevel__Default'
-        value: 'Information'
-      }
-    ]
-    resources: {
-      cpu: 1
-      memory: '2Gi'
-    }
-  }
-}
-```
-
-- Add a parameter for the container image at the top of main.bicep:
-```bicep
-@description('Container image for ${input:appName} ASP.NET Core application')
-param ${input:appName}AppImage string = 'mcr.microsoft.com/k8se/quickstart:latest'
-```
-
-- Add output values for the new container app:
-```bicep
-// ${input:appName} App Outputs
-output ${upper(replace("${input:appName}", '-', '_'))}_APP_ENDPOINT string = ${input:appName}App.outputs.fqdn
-output ${upper(replace("${input:appName}", '-', '_'))}_APP_NAME string = ${input:appName}App.outputs.name
-output ${upper(replace("${input:appName}", '-', '_'))}_APP_ID string = ${input:appName}App.outputs.id
-```
-
-## Technical Requirements
-
-- Use .NET 9.0 with latest C# language features and syntax
-- Follow ASP.NET Core best practices and conventions
-- Implement proper configuration management with strongly-typed settings
-- Include comprehensive XML documentation throughout
-- Production-ready error handling and middleware
-- Environment-based configuration with appsettings files
-- Clean, maintainable code structure with SOLID principles
-- Docker containerization ready for Azure Container Apps
-- Multi-stage builds for optimization
-- Security best practices (non-root user, HTTPS, proper authentication)
-- Proper logging configuration using Serilog (never use Console.WriteLine)
-- Structured logging with JSON format for production environments
-- Azure Monitor integration via OpenTelemetry
-- Distributed tracing for microservices architecture
-- Observability and monitoring ready with health checks
-- Performance tracking and metrics collection
-- Safe dependency versioning (use >= and < operators to prevent major version upgrades)
-- Comprehensive API documentation with Swagger/OpenAPI
-- Nullable reference types enabled for better null safety
-- Global error handling with proper HTTP status codes
-- Dependency injection best practices
-- Async/await patterns throughout
-- Unit testing support with xUnit
-- Integration testing capabilities
-- CORS configuration for cross-origin requests
-- Health check endpoints for container orchestration
+            Message = "Health check
