@@ -7,7 +7,7 @@ This repository uses a research-first approach to ensure implementations are bac
 ### 1. Research Phase
 Start with the `azure-docs-research` chat mode agent:
 - **`/research-plan`** - Generate a research plan with scope, topics, libraries, and refined search terms
-- **`/research-collect`** - Execute research and collect code snippets, configurations, and documentation
+- **`/research-collect`** - Execute research and collect code snippets, configurations, and documentation. Make sure to attach the filled planning template from the previous step to your Github Copilot chat session.
 
 Output: Research artifacts in `.github/scratchpad/` (plan and collection files)
 
