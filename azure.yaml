@@ -15,20 +15,7 @@ platform:
   type: devcenter
 
 services:
-  
-  # Additional service examples with remote builds:
-  # web:
-  #   project: "./src/web"
-  #   language: js
-  #   host: containerapp
-  #   docker:
-  #     remoteBuild: true
-  # api:
-  #   project: "./src/api"  
-  #   language: python
-  #   host: containerapp
-  #   docker:
-  #     remoteBuild: true
+
 
 # Hooks allow you to run scripts at various points in the azd workflow
 # Using Python with uv for better dependency management
