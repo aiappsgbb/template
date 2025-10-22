@@ -1,7 +1,7 @@
 # azure.yaml defines the Azure Developer CLI (azd) project configuration
 name: azd-template
 metadata:
-  template: azd-template@0.0.1-beta
+  template: <IP_NAME>@1.0 # DO REPLACE WITH YOUR IP NAME - REQUIRED FOR TRACKING
 
 # Infrastructure configuration
 infra:
