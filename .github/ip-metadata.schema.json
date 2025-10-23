@@ -41,6 +41,7 @@
       "type": "string",
       "description": "Target industry vertical",
       "enum": [
+        "Cross",
         "Financial Services",
         "Retail",
         "Energy",
@@ -77,7 +78,9 @@
           "Cloud Native",
           "Integration",
           "Business Intelligence",
-          "DevOps"
+          "DevOps",
+          "OCR",
+          "Document Intelligence"
         ]
       },
       "minItems": 1,
@@ -103,7 +106,8 @@
           "Azure Cognitive Services",
           "Azure Event Hubs",
           "Azure Service Bus",
-          "Azure API Management"
+          "Azure API Management",
+          "Azure Document Intelligence"
         ]
       },
       "minItems": 1,
