@@ -5,6 +5,28 @@ tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCo
 description: 'Create a new Gradio application for interactive UIs and AI demos following best practices'
 ---
 
+## Research Context (Optional - If Available)
+
+If research planning and collection templates were completed prior to this task, reference them here for implementation guidance:
+
+**Plan File Used**: ${input:planFile:[plan filename or N/A]}
+**Collection File Used**: ${input:collectionFile:[collection filename or N/A]}
+**Date**: [YYYY-MM-DD]
+**Collector**: ${input:collector:[Agent/User or N/A]}
+**Initial Prompt (verbatim)**: ${input:initialPrompt:[original research question or N/A]}
+**Referenced Research Plan**: ${input:researchPlan:[plan filename or N/A]}
+
+**Research Artifacts Location**: 
+- Plan: `.github/scratchpad/research-plan-[TIMESTAMP].md` (if exists)
+- Collection: `.github/scratchpad/research-collection-[TIMESTAMP].md` (if exists)
+
+**Implementation Notes**: 
+- Review research collection findings for Gradio UI patterns, AI demo integration, and configuration
+- Use consolidated environment variables from collection template
+- Reference code snippets from findings for implementation
+- Validate against research gaps identified in collection phase
+
+---
 # Create New Gradio Application
 
 - Create a new Gradio application using uv package manager under the src folder for interactive user interfaces and AI demos.

@@ -4,7 +4,30 @@ model: Auto (copilot)
 tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands']
 description: 'Create a new README file with standard IP structure'
 ---
-Create a comprehensive README.md file with a standard structure for an intellectual property (IP) project.
+# Comprehensive README.md Generation for IP Project
+
+## Research Context (Optional - If Available)
+
+If research planning and collection templates were completed prior to this task, reference them here for implementation guidance:
+
+**Plan File Used**: ${input:planFile:[plan filename or N/A]}
+**Collection File Used**: ${input:collectionFile:[collection filename or N/A]}
+**Date**: [YYYY-MM-DD]
+**Collector**: ${input:collector:[Agent/User or N/A]}
+**Initial Prompt (verbatim)**: ${input:initialPrompt:[original research question or N/A]}
+**Referenced Research Plan**: ${input:researchPlan:[plan filename or N/A]}
+
+**Research Artifacts Location**: 
+- Plan: `.github/scratchpad/research-plan-[TIMESTAMP].md` (if exists)
+- Collection: `.github/scratchpad/research-collection-[TIMESTAMP].md` (if exists)
+
+**Implementation Notes**: 
+- Review research collection findings for documentation structure, code samples, and configuration
+- Use consolidated environment variables from collection template
+- Reference code snippets from findings for documentation
+- Validate against research gaps identified in collection phase
+
+---
 
 1. Generate a README.md file with the following sections:
 

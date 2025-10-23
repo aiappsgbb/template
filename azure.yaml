@@ -1,7 +1,7 @@
 # azure.yaml defines the Azure Developer CLI (azd) project configuration
 name: azd-template
 metadata:
-  template: azd-template@0.0.1-beta
+  template: <IP_NAME>@1.0 # DO REPLACE WITH YOUR IP NAME - REQUIRED FOR TRACKING
 
 # Infrastructure configuration
 infra:
@@ -15,20 +15,7 @@ platform:
   type: devcenter
 
 services:
-  
-  # Additional service examples with remote builds:
-  # web:
-  #   project: "./src/web"
-  #   language: js
-  #   host: containerapp
-  #   docker:
-  #     remoteBuild: true
-  # api:
-  #   project: "./src/api"  
-  #   language: python
-  #   host: containerapp
-  #   docker:
-  #     remoteBuild: true
+
 
 # Hooks allow you to run scripts at various points in the azd workflow
 # Using Python with uv for better dependency management

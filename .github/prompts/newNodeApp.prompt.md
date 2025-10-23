@@ -5,6 +5,29 @@ tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCo
 description: 'Create a new Node.js/TypeScript application following best practices and a simplified structure'
 ---
 
+## Research Context (Optional - If Available)
+
+If research planning and collection templates were completed prior to this task, reference them here for implementation guidance:
+
+**Plan File Used**: ${input:planFile:[plan filename or N/A]}
+**Collection File Used**: ${input:collectionFile:[collection filename or N/A]}
+**Date**: [YYYY-MM-DD]
+**Collector**: ${input:collector:[Agent/User or N/A]}
+**Initial Prompt (verbatim)**: ${input:initialPrompt:[original research question or N/A]}
+**Referenced Research Plan**: ${input:researchPlan:[plan filename or N/A]}
+
+**Research Artifacts Location**: 
+- Plan: `.github/scratchpad/research-plan-[TIMESTAMP].md` (if exists)
+- Collection: `.github/scratchpad/research-collection-[TIMESTAMP].md` (if exists)
+
+**Implementation Notes**: 
+- Review research collection findings for Node.js/TypeScript API patterns, libraries, and configurations
+- Use consolidated environment variables from collection template
+- Reference code snippets from findings for implementation
+- Validate against research gaps identified in collection phase
+
+---
+
 # Create New Node.js/TypeScript Application
 
 - Create a new Node.js/TypeScript application under the src folder with a simplified structure.

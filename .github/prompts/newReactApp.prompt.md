@@ -13,6 +13,29 @@ description: 'Create a new React + Vite + Tailwind CSS application following bes
 
 **Application Name**: ${input:appName:my-react-app}
 
+## Research Context (Optional - If Available)
+
+If research planning and collection templates were completed prior to this task, reference them here for implementation guidance:
+
+**Plan File Used**: ${input:planFile:[plan filename or N/A]}
+**Collection File Used**: ${input:collectionFile:[collection filename or N/A]}
+**Date**: [YYYY-MM-DD]
+**Collector**: ${input:collector:[Agent/User or N/A]}
+**Initial Prompt (verbatim)**: ${input:initialPrompt:[original research question or N/A]}
+**Referenced Research Plan**: ${input:researchPlan:[plan filename or N/A]}
+
+**Research Artifacts Location**: 
+- Plan: `.github/scratchpad/research-plan-[TIMESTAMP].md` (if exists)
+- Collection: `.github/scratchpad/research-collection-[TIMESTAMP].md` (if exists)
+
+**Implementation Notes**: 
+- Review research collection findings for React-specific patterns, libraries, and configurations
+- Use consolidated environment variables from collection template
+- Reference code snippets from findings for implementation
+- Validate against research gaps identified in collection phase
+
+---
+
 ## Directory Structure
 
 Create the following directory structure:
@@ -836,3 +859,42 @@ output ${upper(replace("${input:appName}", '-', '_'))}_APP_ID string = ${input:a
 - Error boundaries for graceful error handling
 - Loading states and skeleton screens
 - TypeScript strict mode compliance
+
+## Research Artifacts Integration (If Available)
+
+When implementing this React application, leverage any available research collection artifacts:
+
+### Pre-Implementation Checklist
+- [ ] Review research plan file (if exists) for scope validation
+- [ ] Check research collection findings for React + Vite specific patterns
+- [ ] Validate all consolidated environment variables against application requirements
+- [ ] Review code snippets from findings for implementation references
+- [ ] Check consolidated commands/infra for deployment prerequisites
+- [ ] Identify any research gaps that may require additional documentation
+
+### Key Integration Points
+1. **Dependencies**: Cross-reference `package.json` dependencies with research findings for React, Vite, TypeScript, and Application Insights libraries
+2. **Environment Variables**: Use consolidated environment variables from research collection (Section 4) as baseline for `.env.local` and Bicep configuration
+3. **Code Patterns**: Implement code snippets from findings (Section 3) for Application Insights, telemetry, configuration context, and API integration
+4. **Configuration**: Apply config/schema findings to `vite.config.ts`, `tsconfig.json`, and application configuration utilities
+5. **Commands**: Reference consolidated commands (Section 5) for build, deployment, and infrastructure provisioning
+6. **Integration**: Use integration/registration patterns from findings for Azure services and Application Insights setup
+
+### Research Artifacts Reference Structure
+```
+.github/research/
+├── plans/
+│   └── [app-name]-react-app-plan.md          # Research plan with refined search terms
+└── collections/
+    └── [app-name]-react-app-collection.md    # Research findings with code snippets
+```
+
+### Implementation Validation
+After implementation, validate against research artifacts:
+- All environment variables from research collection are configured in Bicep
+- Code patterns from findings are correctly implemented
+- Dependencies match research recommendations with proper version constraints
+- Configuration follows documented patterns from research
+- Any research gaps are documented in application README
+
+**Note**: If no research artifacts exist for this implementation, proceed with standard best practices as documented in this prompt.
