@@ -80,7 +80,8 @@
           "Business Intelligence",
           "DevOps",
           "OCR",
-          "Document Intelligence"
+          "Document Intelligence",
+          "Voice"
         ]
       },
       "minItems": 1,
@@ -107,7 +108,11 @@
           "Azure Event Hubs",
           "Azure Service Bus",
           "Azure API Management",
-          "Azure Document Intelligence"
+          "Azure Document Intelligence",
+          "Azure Communication Services",
+          "AI Foundry",
+          "Azure API Center",
+          "Azure Postgres"
         ]
       },
       "minItems": 1,
