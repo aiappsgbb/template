@@ -27,3 +27,4 @@ Each prompt references research artifacts via inputs: `planFile`, `collectionFil
 Deploy with Bicep using research-informed configurations:
 - `/setupInfra` - Configure comprehensive Azure infrastructure
 - `/addAzdService` - Add new service to azure.yaml
+- `/checkAzdCompliance` - Validate azd configuration before deployment (catches issues that break `azd up`)
