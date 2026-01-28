@@ -16,6 +16,7 @@ This repository contains prompt files to help with common development tasks usin
 ### Infrastructure & Configuration
 - **Setup Infrastructure**: `/setupInfra` - Configure main.bicep with all relevant Azure modules
 - **Add AZD Service**: `/addAzdService` - Add a new service configuration to azure.yaml
+- **Check AZD Compliance**: `/checkAzdCompliance` - Validate Azure Developer CLI configuration and Bicep compliance
 
 ### Best Practices Documentation
 - **[Azure Best Practices](azure-bestpractices.md)** - Security guidelines enforcing zero API keys policy
@@ -40,6 +41,7 @@ Examples:
 /newAgentApp
 /setupInfra
 /addAzdService
+/checkAzdCompliance
 /newReadme
 /ipCompliance
 ```
@@ -56,6 +58,7 @@ All prompt files are located in `.github/prompts/` directory:
 - `newAgentApp.prompt.md` - Microsoft Agent Framework application creation
 - `setupInfra.prompt.md` - Infrastructure setup with Bicep
 - `addAzdService.prompt.md` - Azure Developer CLI service configuration
+- `checkAzdCompliance.prompt.md` - Azure Developer CLI compliance validation
 - `newReadme.prompt.md` - README file generation
 - `ipCompliance.prompt.md` - IP compliance validation and assessment
 
