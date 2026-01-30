@@ -59,11 +59,38 @@ If azure.yaml defines services, verify the infrastructure creates matching resou
 
 **The binding**: azd matches services to resources using naming conventions or explicit `resourceName` in azure.yaml.
 
+### 4. Required azd Tags
+
+azd uses specific tags for resource discovery and management:
+
+**Resource Group** must have:
+```bicep
+var tags = {
+  'azd-env-name': environmentName  // Required - azd uses this to find resources
+}
+```
+
+**Service resources** (Container Apps, Functions, App Service) should have:
+```bicep
+tags: union(tags, {
+  'azd-service-name': 'api'  // Must match service name in azure.yaml
+})
+```
+
+**Check**: For each service in azure.yaml, verify the corresponding Bicep resource includes `azd-service-name` tag matching the service key.
+
+| azure.yaml | Bicep tag required |
+|------------|-------------------|
+| `services.api:` | `'azd-service-name': 'api'` |
+| `services.web:` | `'azd-service-name': 'web'` |
+
+**Why it matters**: Without these tags, azd can't find deployed resources for `azd deploy` or `azd down`.
+
 ---
 
 ## ⚠️ Common Pitfalls (Runtime Failures)
 
-### 4. Missing Outputs for Service Discovery
+### 5. Missing Outputs for Service Discovery
 
 If you have services, azd needs outputs to know where they deployed:
 
@@ -75,14 +102,39 @@ output SERVICE_API_NAME string = containerApp.outputs.name
 
 **Pattern**: `SERVICE_<SERVICE_NAME>_<PROPERTY>`
 
-### 5. Hook Script Issues
+### 6. Hook Script Issues
 
 If hooks are defined, verify:
 - Script files exist at specified paths
 - Required tools are available (uv, python, etc.)
 - Scripts have proper error handling (non-zero exit = deployment stops)
 
-### 6. Container Apps: Image References
+**Undeclared hooks**: Check if hook scripts exist but aren't declared in azure.yaml:
+```powershell
+# Common hook script patterns to check in infra/scripts/
+preprovision.py, postprovision.py, predeploy.py, postdeploy.py
+```
+If these files exist but aren't in azure.yaml `hooks:` section, they won't run during deployment.
+
+### 7. Container Apps: Build Configuration
+
+For `host: containerapp` services with a Dockerfile:
+
+**Prefer `remoteBuild: true`** to avoid local Docker issues:
+```yaml
+services:
+  api:
+    host: containerapp
+    docker:
+      remoteBuild: true  # ✅ Builds in ACR, no local Docker needed
+```
+
+**Check**: If a service has a Dockerfile but no `docker.remoteBuild: true`, flag it:
+- Local builds require Docker Desktop running
+- Local builds fail in CI/CD without proper Docker setup
+- Remote builds are more reliable and portable
+
+### 8. Container Apps: Image References
 
 For `host: containerapp` with `docker.remoteBuild: true`:
 - Bicep must output `AZURE_CONTAINER_REGISTRY_ENDPOINT` or similar
@@ -94,7 +146,7 @@ For `host: containerapp` with `docker.remoteBuild: true`:
 
 Issues specific to deploying in shared/team subscriptions:
 
-### 7. Resource Naming Collisions
+### 9. Resource Naming Collisions
 
 In shared subscriptions, globally unique names cause conflicts:
 
@@ -110,7 +162,7 @@ In shared subscriptions, globally unique names cause conflicts:
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 ```
 
-### 8. Soft-Delete Conflicts
+### 10. Soft-Delete Conflicts
 
 These resources have soft-delete enabled by default - redeploying fails if a deleted resource with same name exists:
 
@@ -120,7 +172,7 @@ These resources have soft-delete enabled by default - redeploying fails if a del
 
 **Check**: Either use unique names per deployment OR handle purge in hooks.
 
-### 9. Environment Isolation
+### 11. Environment Isolation
 
 For shared subscriptions, verify each developer's environment is isolated:
 
@@ -133,7 +185,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 
 **Check**: Resource group name includes `environmentName` parameter.
 
-### 10. Quota-Friendly Defaults
+### 12. Quota-Friendly Defaults
 
 Shared subscriptions often hit quota limits. Verify reasonable defaults:
 
@@ -144,7 +196,7 @@ Shared subscriptions often hit quota limits. Verify reasonable defaults:
 | AI Search | SKU (basic vs standard) |
 | VMs/VMSS | Core counts |
 
-### 11. principalId Handling for RBAC
+### 13. principalId Handling for RBAC
 
 RBAC assignments fail if `principalId` is empty. Verify conditional logic:
 

@@ -120,13 +120,15 @@ jobs:
               az group create \
                 --name "$AZURE_RESOURCE_GROUP" \
                 --location "$AZURE_LOCATION" \
-                --subscription "$AZURE_SUBSCRIPTION_ID"
+                --subscription "$AZURE_SUBSCRIPTION_ID" \
+                --tags "azd-env-name=$AZURE_ENV_NAME"
               echo "Resource group '$AZURE_RESOURCE_GROUP' created successfully"
             fi
         env:
           AZURE_RESOURCE_GROUP: ${{ env.AZURE_RESOURCE_GROUP }}
           AZURE_LOCATION: ${{ env.AZURE_LOCATION }}
           AZURE_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
+          AZURE_ENV_NAME: ${{ env.AZURE_ENV_NAME }}
 
       - name: Provision Infrastructure (Subscription Scope)
         if: ${{ env.TARGET_SCOPE == 'subscription' }}
