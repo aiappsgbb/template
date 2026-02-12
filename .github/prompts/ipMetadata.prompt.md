@@ -1,4 +1,14 @@
+---
+agent: 'agent'
+model:
+  - Claude Opus 4.6 (copilot)
+  - Claude Sonnet 4 (copilot)
+tools: ['githubRepo', 'search/codebase']
+description: 'Create or update IP metadata file with standard structure'
+---
+
 # IP Metadata Standardization
+
 ## Research Context (Optional - If Available)
 
 If research planning and collection templates were completed prior to this task, reference them here for implementation guidance:
@@ -19,15 +29,6 @@ If research planning and collection templates were completed prior to this task,
 - Use consolidated environment variables from collection template
 - Reference code snippets from findings for metadata implementation
 - Validate against research gaps identified in collection phase
-
----
-# IP Metadata Standardization
----
-mode: 'agent'
-model: Auto (copilot)
-tools: ['githubRepo', 'search/codebase']
-description: 'Create or update IP metadata file with standard structure'
----
 
 Create or update the .github/ip-metadata.json file with standardized intellectual property metadata.
 

@@ -1,5 +1,8 @@
 ---
 description: "Generate research plan matching current 4-section template (scope snapshot, topics/search terms, resolved libraries, refined search terms)"
+model:
+  - Claude Opus 4.6 (copilot)
+  - Claude Sonnet 4 (copilot)
 ---
 
 The raw user request (if provided) appears below and MUST anchor the plan.

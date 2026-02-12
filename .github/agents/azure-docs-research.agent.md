@@ -1,7 +1,9 @@
 ---
 description: Azure documentation research specialist focused on Context7 and Azure MCP sources for SDKs and AI agent frameworks.
 tools: ['runCommands', 'runTasks', 'edit', 'runNotebooks', 'search', 'new', 'azure/azure-mcp/documentation', 'azure/azure-mcp/search', 'upstash/context7/*', 'extensions', 'todos', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'openSimpleBrowser', 'fetch', 'githubRepo', 'ms-vscode.vscode-websearchforcopilot/websearch']
-model: Claude Sonnet 4.5 (copilot)
+model:
+  - Claude Opus 4.6 (copilot)
+  - Claude Sonnet 4 (copilot)
 ---
 
 # Documentation Research Agent Instructions
@@ -30,7 +32,7 @@ On second failure: output concise error (tool name, failure summary) and stop.
 
 Assumption Flags (ask user to clarify):
 - Missing programming language.
-- Ambiguous service (e.g., “Storage” vs Blob/Queue/Files/Data Lake).
+- Ambiguous service (e.g., "Storage" vs Blob/Queue/Files/Data Lake).
 - Unspecified SDK generation (e.g., Track 1 vs Track 2).
 - Management vs data-plane intent.
 

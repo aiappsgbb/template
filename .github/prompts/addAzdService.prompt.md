@@ -1,3 +1,12 @@
+---
+agent: 'agent'
+model:
+  - Claude Opus 4.6 (copilot)
+  - Claude Sonnet 4 (copilot)
+tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands']
+description: 'Add a new service to azure.yaml configuration'
+---
+
 ## Research Context (Optional - If Available)
 
 If research planning and collection templates were completed prior to this task, reference them here for implementation guidance:
@@ -18,15 +27,6 @@ If research planning and collection templates were completed prior to this task,
 - Use consolidated environment variables from collection template
 - Reference code snippets from findings for service addition
 - Validate against research gaps identified in collection phase
-
----
-# Add New Azure Developer CLI Service
----
-mode: 'agent'
-model: Auto (copilot)
-tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands']
-description: 'Add a new service to azure.yaml configuration'
----
 
 # Add Service to Azure Developer CLI Configuration
 

@@ -1,6 +1,8 @@
 ---
-mode: 'agent'
-model: Claude Sonnet 4 (copilot)
+agent: 'agent'
+model:
+  - Claude Opus 4.6 (copilot)
+  - Claude Sonnet 4 (copilot)
 tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCommands']
 description: 'Create a new Python application using uv package manager following best practices and a simplified structure.'
 ---

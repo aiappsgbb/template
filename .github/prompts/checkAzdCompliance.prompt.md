@@ -1,6 +1,8 @@
 ---
-mode: 'agent'
-model: Auto (copilot)
+agent: 'agent'
+model:
+  - Claude Opus 4.6 (copilot)
+  - Claude Sonnet 4 (copilot)
 tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands', 'mcp']
 description: 'Validate Azure Developer CLI (azd) compliance - focus on what breaks deployments'
 ---

@@ -25,6 +25,16 @@ This repository contains prompt files to help with common development tasks usin
 ### Documentation & Compliance
 - **Create README**: `/newReadme` - Generate a comprehensive README with standard IP structure
 - **IP Compliance**: `/ipCompliance` - Comprehensive compliance assessment for Azure Developer CLI templates
+- **IP Metadata**: `/ipMetadata` - Create or update IP metadata file with standard structure
+
+### Research
+- **Research Plan**: `/research-plan` - Generate research plan with scope snapshot, topics, and search terms
+- **Research Collect**: `/research-collect` - Execute per-refined-search-term collection with docs extraction
+
+### Custom Agents
+- **Azure Docs Research**: `@azure-docs-research` - Azure documentation research specialist with Context7 and Azure MCP sources
+
+> **Note**: All prompts and agents default to **Claude Opus 4.6** with Claude Sonnet 4 as fallback. Model preference is set via the `model` array in YAML frontmatter.
 
 ## Usage
 
@@ -61,6 +71,14 @@ All prompt files are located in `.github/prompts/` directory:
 - `checkAzdCompliance.prompt.md` - Azure Developer CLI compliance validation
 - `newReadme.prompt.md` - README file generation
 - `ipCompliance.prompt.md` - IP compliance validation and assessment
+- `ipMetadata.prompt.md` - IP metadata standardization
+- `research-plan.prompt.md` - Research planning with structured templates
+- `research-collect.prompt.md` - Research collection with docs extraction
+
+## Custom Agents Location
+
+Custom agents are located in `.github/agents/` directory:
+- `azure-docs-research.agent.md` - Azure documentation research specialist
 
 ## Customization
 

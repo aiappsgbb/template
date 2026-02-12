@@ -1,5 +1,8 @@
 ---
 description: "Execute per-refined-search-term collection (library pairing -> docs extraction -> structured findings)"
+model:
+  - Claude Opus 4.6 (copilot)
+  - Claude Sonnet 4 (copilot)
 ---
 
 The user input (if any) appears below. You MUST consider it when performing collection.

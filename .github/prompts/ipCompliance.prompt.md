@@ -1,3 +1,12 @@
+---
+agent: 'agent'
+model:
+  - Claude Opus 4.6 (copilot)
+  - Claude Sonnet 4 (copilot)
+tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands']
+description: 'Comprehensive IP compliance checker for Azure Developer CLI templates'
+---
+
 ## Research Context (Optional - If Available)
 
 If research planning and collection templates were completed prior to this task, reference them here for implementation guidance:
@@ -18,15 +27,6 @@ If research planning and collection templates were completed prior to this task,
 - Use consolidated environment variables from collection template
 - Reference code snippets from findings for compliance validation
 - Validate against research gaps identified in collection phase
-
----
-# IP Compliance Validation and Assessment
----
-mode: 'agent'
-model: Claude Sonnet 4 (copilot)
-tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands']
-description: 'Comprehensive IP compliance checker for Azure Developer CLI templates'
----
 
 # IP Compliance Assessment
 

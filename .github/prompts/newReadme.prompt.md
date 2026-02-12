@@ -1,6 +1,8 @@
 ---
-mode: 'agent'
-model: Auto (copilot)
+agent: 'agent'
+model:
+  - Claude Opus 4.6 (copilot)
+  - Claude Sonnet 4 (copilot)
 tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands']
 description: 'Create a new README file with standard IP structure'
 ---
