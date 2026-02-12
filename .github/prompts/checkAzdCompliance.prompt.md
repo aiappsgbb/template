@@ -142,13 +142,95 @@ For `host: containerapp` with `docker.remoteBuild: true`:
 - Bicep must output `AZURE_CONTAINER_REGISTRY_ENDPOINT` or similar
 - Container App must reference the correct registry
 
+### 9. Container Apps: Image Preservation (SERVICE_XXX_IMAGE_NAME)
+
+When `azd provision` runs against an **existing** Container App, it must NOT overwrite the currently deployed container image with a default/placeholder value. This is achieved using two azd-managed variables per service.
+
+**Reference**: [Deploy to Azure Container Apps using azd](https://learn.microsoft.com/azure/developer/azure-developer-cli/container-apps-workflows)
+
+#### Required Variables
+
+For each service `{NAME}` in `azure.yaml` with `host: containerapp`:
+
+| Variable | Purpose | Used In |
+|----------|---------|---------|
+| `SERVICE_{NAME}_IMAGE_NAME` | Current deployed image tag (set by `azd deploy`) | `main.parameters.json` → Bicep `imageName` param |
+| `SERVICE_{NAME}_RESOURCE_EXISTS` | Whether the Container App already exists (set by `azd provision`) | `main.parameters.json` → Bicep `exists` param |
+
+#### Check 1: `main.parameters.json` must map both variables
+
+For a service named `api` in `azure.yaml`:
+```json
+{
+  "parameters": {
+    "apiImageName": {
+      "value": "${SERVICE_API_IMAGE_NAME=}"
+    },
+    "apiExists": {
+      "value": "${SERVICE_API_RESOURCE_EXISTS=false}"
+    }
+  }
+}
+```
+
+**Pattern**: `SERVICE_<UPPER_CASE_SERVICE_NAME>_IMAGE_NAME` and `SERVICE_<UPPER_CASE_SERVICE_NAME>_RESOURCE_EXISTS`
+
+**Note**: The `=` after the variable name provides a default (empty string or `false`) for first-time deployments.
+
+#### Check 2: Bicep must declare and use corresponding parameters
+
+```bicep
+@description('Container image name for the api service')
+param apiImageName string = ''
+
+@description('Whether the api Container App already exists')
+param apiExists bool = false
+```
+
+The image parameter must be used with an empty-check guard to avoid deploying a blank image:
+```bicep
+containerImage: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+```
+
+The `exists` parameter must be passed to the Container App module to enable upsert behavior.
+
+#### Check 3: AVM container-app-upsert (recommended)
+
+If using the image-based deployment strategy, prefer the AVM [`container-app-upsert`](https://github.com/Azure/bicep-registry-modules/tree/main/avm/ptn/azd/container-app-upsert) module which encapsulates the upsert logic internally:
+```bicep
+module api 'br/public:avm/ptn/azd/container-app-upsert:<version>' = {
+  params: {
+    imageName: !empty(apiImageName) ? apiImageName : ''
+    exists: apiExists
+    // ...
+  }
+}
+```
+
+#### What breaks without this
+
+| Scenario | Without IMAGE_NAME / RESOURCE_EXISTS | With both variables |
+|----------|--------------------------------------|---------------------|
+| First `azd provision` | ✅ Works (uses default placeholder) | ✅ Works |
+| `azd deploy` | ✅ Pushes new image | ✅ Pushes new image |
+| Re-run `azd provision` | ❌ **Overwrites deployed image** with placeholder, app breaks | ✅ Preserves current image |
+| `azd up` (provision + deploy) | ⚠️ Temporary downtime between provision and deploy | ✅ Image preserved during provision phase |
+
+#### Validation command
+
+For each service in `azure.yaml`, check the parameter file:
+```powershell
+# Verify both variables exist for each containerapp service
+Select-String -Path infra/main.parameters.json -Pattern 'SERVICE_.*_IMAGE_NAME|SERVICE_.*_RESOURCE_EXISTS'
+```
+
 ---
 
 ## 🏢 Shared Subscription Considerations
 
 Issues specific to deploying in shared/team subscriptions:
 
-### 9. Resource Naming Collisions
+### 10. Resource Naming Collisions
 
 In shared subscriptions, globally unique names cause conflicts:
 
@@ -164,7 +246,7 @@ In shared subscriptions, globally unique names cause conflicts:
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 ```
 
-### 10. Soft-Delete Conflicts
+### 11. Soft-Delete Conflicts
 
 These resources have soft-delete enabled by default - redeploying fails if a deleted resource with same name exists:
 
@@ -174,7 +256,7 @@ These resources have soft-delete enabled by default - redeploying fails if a del
 
 **Check**: Either use unique names per deployment OR handle purge in hooks.
 
-### 11. Environment Isolation
+### 12. Environment Isolation
 
 For shared subscriptions, verify each developer's environment is isolated:
 
@@ -187,7 +269,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 
 **Check**: Resource group name includes `environmentName` parameter.
 
-### 12. Quota-Friendly Defaults
+### 13. Quota-Friendly Defaults
 
 Shared subscriptions often hit quota limits. Verify reasonable defaults:
 
@@ -198,7 +280,7 @@ Shared subscriptions often hit quota limits. Verify reasonable defaults:
 | AI Search | SKU (basic vs standard) |
 | VMs/VMSS | Core counts |
 
-### 13. principalId Handling for RBAC
+### 14. principalId Handling for RBAC
 
 RBAC assignments fail if `principalId` is empty. Verify conditional logic:
 
@@ -276,6 +358,8 @@ When applying fixes:
 ## References
 
 - [azd schema reference](https://learn.microsoft.com/azure/developer/azure-developer-cli/azd-schema)
+- [Container Apps deployment strategies](https://learn.microsoft.com/azure/developer/azure-developer-cli/container-apps-workflows) (IMAGE_NAME / RESOURCE_EXISTS patterns)
+- [AVM container-app-upsert module](https://github.com/Azure/bicep-registry-modules/tree/main/avm/ptn/azd/container-app-upsert) (recommended upsert pattern)
 - [Azure Best Practices](../azure-bestpractices.md) (for security patterns)
 
 ---
