@@ -3,27 +3,13 @@ agent: 'agent'
 model:
   - Claude Opus 4.6 (copilot)
   - Claude Sonnet 4 (copilot)
-tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCommands']
+tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCommands', 'mcp']
 description: 'Create a new Node.js/TypeScript application following best practices and a simplified structure'
 ---
 
-## Research Context (Optional - If Available)
+**Skills**: Load `azure-ai-projects-ts` and `containerization` skills for Azure AI SDK patterns and Dockerfile templates.
 
-If research planning and collection templates were completed prior to this task, reference them here for implementation guidance:
-
-**Plan File Used**: ${input:planFile:[plan filename or N/A]}
-**Collection File Used**: ${input:collectionFile:[collection filename or N/A]}
-**Date**: [YYYY-MM-DD]
-**Collector**: ${input:collector:[Agent/User or N/A]}
-**Initial Prompt (verbatim)**: ${input:initialPrompt:[original research question or N/A]}
-**Referenced Research Plan**: ${input:researchPlan:[plan filename or N/A]}
-
-**Research Artifacts Location**: 
-- Plan: `.github/scratchpad/research-plan-[TIMESTAMP].md` (if exists)
-- Collection: `.github/scratchpad/research-collection-[TIMESTAMP].md` (if exists)
-
-**Implementation Notes**: 
-- Review research collection findings for Node.js/TypeScript API patterns, libraries, and configurations
+> **Research context**: Optionally reference a plan from `.github/scratchpad/research-plan-*.md` and collection from `.github/scratchpad/research-collection-*.md`.
 - Use consolidated environment variables from collection template
 - Reference code snippets from findings for implementation
 - Validate against research gaps identified in collection phase

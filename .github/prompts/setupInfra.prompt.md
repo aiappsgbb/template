@@ -3,33 +3,15 @@ agent: 'agent'
 model:
   - Claude Opus 4.6 (copilot)
   - Claude Sonnet 4 (copilot)
-tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands']
+tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands', 'mcp']
 description: 'Setup Azure infrastructure with Bicep'
 ---
+
+**Skills**: Load `bicep-azd-patterns` and `azd-deployment` skills for Bicep conventions, module patterns, and azd integration.
+
 Configure the main.bicep file to set up a comprehensive Azure infrastructure using all available modules in the infra/core directory.
 
-**Critical**: Follow [Bicep Deployment Best Practices](../bicep-deployment-bestpractices.md) for all infrastructure components.
-
-## Research Context (Optional - If Available)
-
-If research planning and collection templates were completed prior to this task, reference them here for implementation guidance:
-
-**Plan File Used**: ${input:planFile:[plan filename or N/A]}
-**Collection File Used**: ${input:collectionFile:[collection filename or N/A]}
-**Date**: [YYYY-MM-DD]
-**Collector**: ${input:collector:[Agent/User or N/A]}
-**Initial Prompt (verbatim)**: ${input:initialPrompt:[original research question or N/A]}
-**Referenced Research Plan**: ${input:researchPlan:[plan filename or N/A]}
-
-**Research Artifacts Location**: 
-- Plan: `.github/scratchpad/research-plan-[TIMESTAMP].md` (if exists)
-- Collection: `.github/scratchpad/research-collection-[TIMESTAMP].md` (if exists)
-
-**Implementation Notes**: 
-- Review research collection findings for Azure infrastructure patterns, Bicep configurations, and service dependencies
-- Use consolidated environment variables from collection template
-- Reference code snippets from findings for infrastructure implementation
-- Validate against research gaps identified in collection phase
+**Critical**: Follow [Bicep Deployment Best Practices](../bicep-deployment-bestpractices.md) and [Azure Security Best Practices](../azure-bestpractices.md).
 
 ---
 

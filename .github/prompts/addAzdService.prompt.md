@@ -3,58 +3,37 @@ agent: 'agent'
 model:
   - Claude Opus 4.6 (copilot)
   - Claude Sonnet 4 (copilot)
-tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands']
+tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands', 'mcp']
 description: 'Add a new service to azure.yaml configuration'
 ---
 
-## Research Context (Optional - If Available)
-
-If research planning and collection templates were completed prior to this task, reference them here for implementation guidance:
-
-**Plan File Used**: ${input:planFile:[plan filename or N/A]}
-**Collection File Used**: ${input:collectionFile:[collection filename or N/A]}
-**Date**: [YYYY-MM-DD]
-**Collector**: ${input:collector:[Agent/User or N/A]}
-**Initial Prompt (verbatim)**: ${input:initialPrompt:[original research question or N/A]}
-**Referenced Research Plan**: ${input:researchPlan:[plan filename or N/A]}
-
-**Research Artifacts Location**: 
-- Plan: `.github/scratchpad/research-plan-[TIMESTAMP].md` (if exists)
-- Collection: `.github/scratchpad/research-collection-[TIMESTAMP].md` (if exists)
-
-**Implementation Notes**: 
-- Review research collection findings for Azure service configuration, environment variables, and CLI integration
-- Use consolidated environment variables from collection template
-- Reference code snippets from findings for service addition
-- Validate against research gaps identified in collection phase
-
 # Add Service to Azure Developer CLI Configuration
-
-**Important**: Follow [Bicep Deployment Best Practices](../bicep-deployment-bestpractices.md) for infrastructure updates.
 
 Add a new service to the `azure.yaml` file for deployment with Azure Developer CLI.
 
-## Service Configuration Requirements
+**Skills to use**: Load the `azd-deployment` and `bicep-azd-patterns` skills for azure.yaml schema, Bicep patterns, and IMAGE_NAME/RESOURCE_EXISTS conventions.
 
-Update the root `azure.yaml` file to include a new service entry with the following structure:
+**Security**: Follow [azure-bestpractices.md](../azure-bestpractices.md) — NEVER include API keys in environment variables.
 
-### Basic Service Entry
+## Service Configuration
 
-Add to the `services` section:
+Update the root `azure.yaml` to include a new service entry:
+
+### Standard Service Entry
 
 ```yaml
 services:
   <service-name>:
+    project: "./src/<service-directory>"
     language: <python|js|dotnet>
     host: containerapp
     docker:
-      path: ./src/<service-directory>
-      context: ./src/<service-directory>
+      remoteBuild: true  # ← Always prefer remote builds
 ```
 
-### Language-Specific Configurations
+### Language-Specific Examples
 
-#### Python Services (FastAPI, Gradio, Flask)
+#### Python (FastAPI, Gradio, Streamlit)
 ```yaml
 services:
   my-python-app:
@@ -62,24 +41,10 @@ services:
     language: python
     host: containerapp
     docker:
-      registry: "${AZURE_CONTAINER_REGISTRY_ENDPOINT}"
       remoteBuild: true
-      buildArgs:
-        - "--platform=linux/amd64"
-    env:
-      - AZURE_OPENAI_ENDPOINT
-      - APPLICATION_INSIGHTS_CONNECTION_STRING
-      - AZURE_CLIENT_ID  # REQUIRED for managed identity
-      - LOG_LEVEL
-
-# ⚠️ SECURITY: Follow Azure Best Practices
-# NEVER include API keys in environment variables:
-# ❌ AZURE_OPENAI_API_KEY (FORBIDDEN)
-# ❌ AZURE_AI_SEARCH_KEY (FORBIDDEN)
-# See: ../azure-bestpractices.md
 ```
 
-#### Node.js/TypeScript Services
+#### Node.js/TypeScript
 ```yaml
 services:
   my-node-app:
@@ -87,164 +52,96 @@ services:
     language: js
     host: containerapp
     docker:
-      registry: "${AZURE_CONTAINER_REGISTRY_ENDPOINT}"
       remoteBuild: true
-      buildArgs:
-        - "--platform=linux/amd64"
-    env:
-      - NODE_ENV
-      - PORT
-      - LOG_LEVEL
-      - APPLICATION_INSIGHTS_CONNECTION_STRING
 ```
 
-#### Gradio Applications
+#### .NET
 ```yaml
 services:
-  my-gradio-app:
-    project: "./src/my-gradio-app"
-    language: python
+  my-dotnet-app:
+    project: "./src/my-dotnet-app"
+    language: dotnet
     host: containerapp
     docker:
-      registry: "${AZURE_CONTAINER_REGISTRY_ENDPOINT}"
       remoteBuild: true
-      buildArgs:
-        - "--platform=linux/amd64"
-    env:
-      - AZURE_OPENAI_ENDPOINT
-      - AZURE_OPENAI_API_KEY
-      - GRADIO_SERVER_PORT=7860
-      - GRADIO_SERVER_NAME=0.0.0.0
-      - APPLICATION_INSIGHTS_CONNECTION_STRING
 ```
 
-### Environment Variables
+## Required Bicep Changes
 
-Include common environment variables that should be available to the service:
+For each new service, update `infra/main.bicep` and `infra/main.parameters.json`:
 
-#### AI/ML Services
+### 1. Add Container Image Parameters (main.bicep)
+
+```bicep
+@description('Container image for the <service-name> service')
+param <serviceName>ImageName string = ''
+
+@description('Whether the <service-name> Container App already exists')
+param <serviceName>Exists bool = false
+```
+
+### 2. Add Parameter Mappings (main.parameters.json)
+
+```json
+"<serviceName>ImageName": {
+  "value": "${SERVICE_<SERVICE_NAME_UPPER>_IMAGE_NAME=}"
+},
+"<serviceName>Exists": {
+  "value": "${SERVICE_<SERVICE_NAME_UPPER>_RESOURCE_EXISTS=false}"
+}
+```
+
+### 3. Add Container App Module (main.bicep)
+
+```bicep
+module <serviceName> 'core/host/container-app.bicep' = {
+  name: '<service-name>'
+  params: {
+    name: '${abbrs.appContainerApps}<service-name>-${resourceToken}'
+    tags: union(tags, { 'azd-service-name': '<service-name>' })
+    containerImage: !empty(<serviceName>ImageName) ? <serviceName>ImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+    containerAppsEnvironmentId: containerAppsEnvironment.outputs.id
+    containerRegistryName: containerRegistry.outputs.name
+    userAssignedIdentityId: userAssignedIdentity.outputs.id
+    environmentVariables: [
+      { name: 'AZURE_CLIENT_ID', value: userAssignedIdentity.outputs.clientId }
+      { name: 'APPLICATION_INSIGHTS_CONNECTION_STRING', value: monitoring.outputs.applicationInsightsConnectionString }
+      // Add service-specific endpoints (NEVER API keys)
+    ]
+  }
+}
+```
+
+### 4. Add Outputs (main.bicep)
+
+```bicep
+output SERVICE_<SERVICE_NAME_UPPER>_ENDPOINT_URL string = <serviceName>.outputs.fqdn
+output SERVICE_<SERVICE_NAME_UPPER>_NAME string = <serviceName>.outputs.name
+```
+
+## Environment Variables Policy
+
+**✅ ALLOWED** — endpoints and connection strings:
+- `AZURE_CLIENT_ID` (REQUIRED for managed identity)
 - `AZURE_OPENAI_ENDPOINT`
-- `AZURE_OPENAI_API_KEY`
-- `AZURE_OPENAI_DEPLOYMENT_NAME`
-- `AZURE_AI_SEARCH_ENDPOINT`
-- `AZURE_AI_SEARCH_KEY`
-
-#### Monitoring & Observability
-- `APPLICATION_INSIGHTS_CONNECTION_STRING`
-- `AZURE_MONITOR_CONNECTION_STRING`
-- `LOG_LEVEL`
-
-#### Database & Storage
-- `AZURE_COSMOS_DB_ENDPOINT`
-- `AZURE_STORAGE_ACCOUNT_NAME`
+- `AZURE_SEARCH_ENDPOINT`
+- `AZURE_COSMOS_ENDPOINT`
 - `AZURE_KEY_VAULT_ENDPOINT`
+- `APPLICATION_INSIGHTS_CONNECTION_STRING`
 
-#### Service Configuration
-- `PORT` (for Node.js services)
-- `HOST` (if needed)
-- `DEBUG` (for development)
-- `NODE_ENV` (for Node.js)
+**❌ FORBIDDEN** — API keys and secrets:
+- `AZURE_OPENAI_API_KEY`
+- `AZURE_AI_SEARCH_KEY`
+- `AZURE_STORAGE_ACCOUNT_KEY`
+- Any `*_KEY` or `*_SECRET` variables
 
-### Service Dependencies
+## Validation Checklist
 
-If the service depends on other infrastructure components, add dependencies:
+After adding the service:
 
-```yaml
-services:
-  my-app:
-    language: python
-    host: containerapp
-    docker:
-      path: ./src/my-app
-    depends:
-      - ai-search
-      - cosmos-db
-      - key-vault
-```
-
-### Ingress Configuration
-
-For services that need external access (like Gradio UIs):
-
-```yaml
-services:
-  my-gradio-app:
-    language: python
-    host: containerapp
-    docker:
-      path: ./src/my-gradio-app
-    env:
-      - GRADIO_SERVER_PORT=7860
-    # Ingress will be configured automatically by AZD for container apps
-```
-
-### Resource Scaling
-
-For services with specific scaling requirements:
-
-```yaml
-services:
-  my-api:
-    language: python
-    host: containerapp
-    docker:
-      path: ./src/my-api
-    env:
-      - MIN_REPLICAS=1
-      - MAX_REPLICAS=10
-      - CPU_REQUESTS=0.25
-      - MEMORY_REQUESTS=0.5Gi
-```
-
-## Validation Steps
-
-After adding the service configuration:
-
-1. **Syntax Check**: Ensure the YAML syntax is valid
-2. **Environment Variables**: Verify all required environment variables are included
-3. **Path Validation**: Confirm the Docker path points to the correct directory
-4. **Dependencies**: Check that any service dependencies are properly configured
-5. **Resource Names**: Ensure service names follow Azure naming conventions (lowercase, alphanumeric, hyphens)
-
-## Integration with Infrastructure
-
-The service configuration should align with the Bicep infrastructure templates:
-
-- Container Apps environment in `infra/core/host/container-apps-environment.bicep`
-- Container App deployment in `infra/core/host/container-app.bicep`
-- Environment variables sourced from Key Vault or App Configuration
-- Proper RBAC permissions for accessing Azure services
-
-## Best Practices
-
-- Use descriptive service names that match the application purpose
-- Group related environment variables together
-- Include only necessary environment variables to minimize configuration drift
-- Use consistent naming conventions across all services
-- Document any non-standard configurations
-- Ensure environment variables are properly secured (use Key Vault references)
-- Test the configuration with `azd up` in a development environment
-
-## Example Complete Service Addition
-
-```yaml
-services:
-  chat-assistant:
-    language: python
-    host: containerapp
-    docker:
-      path: ./src/chat-assistant
-      context: ./src/chat-assistant
-    env:
-      - AZURE_OPENAI_ENDPOINT
-      - AZURE_OPENAI_API_KEY
-      - AZURE_OPENAI_DEPLOYMENT_NAME
-      - APPLICATION_INSIGHTS_CONNECTION_STRING
-      - LOG_LEVEL=INFO
-      - GRADIO_SERVER_PORT=7860
-    depends:
-      - openai
-      - monitoring
-```
-
-This configuration creates a Gradio-based chat assistant service that depends on OpenAI and monitoring infrastructure, with all necessary environment variables for Azure integration.
+- [ ] `azure.yaml` has correct `project` path, `language`, `host: containerapp`, `docker.remoteBuild: true`
+- [ ] `main.parameters.json` has `SERVICE_<NAME>_IMAGE_NAME` and `SERVICE_<NAME>_RESOURCE_EXISTS` entries
+- [ ] `main.bicep` has matching parameters, Container App module with `azd-service-name` tag, and outputs
+- [ ] Container App module includes `AZURE_CLIENT_ID` environment variable
+- [ ] No API keys in environment variables
+- [ ] Run `az bicep build --file infra/main.bicep --stdout | Out-Null` to validate syntax

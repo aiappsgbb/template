@@ -1,128 +1,84 @@
 # GitHub Copilot Instructions
 
-This repository contains prompt files to help with common development tasks using GitHub Copilot.
+Comprehensive Azure Developer CLI template for modern cloud applications with AI capabilities.
 
-## Available Prompts
+## Repository Structure
 
-### Application Creation
-- **Python App**: `/newPythonApp` - Create a new Python FastAPI application with uv package manager under src/
-- **Node.js/TypeScript App**: `/newNodeApp` - Create a new Node.js/TypeScript Express application under src/
-- **.NET Web API**: `/newDotNetApp` - Create a new ASP.NET Core Web API application with .NET 9 under src/
-- **React App**: `/newReactApp` - Create a new React + Vite + Tailwind CSS application under src/
-- **Gradio App**: `/newGradioApp` - Create a new Gradio application for interactive UIs and AI demos under src/
-- **Streamlit App**: `/newStreamlitApp` - Create a new Streamlit application for data science UIs and AI demos under src/
-- **Agent App**: `/newAgentApp` - Create a new AI agent application using Microsoft Agent Framework under src/
-
-### Infrastructure & Configuration
-- **Setup Infrastructure**: `/setupInfra` - Configure main.bicep with all relevant Azure modules
-- **Add AZD Service**: `/addAzdService` - Add a new service configuration to azure.yaml
-- **Check AZD Compliance**: `/checkAzdCompliance` - Validate Azure Developer CLI configuration and Bicep compliance
-
-### Best Practices Documentation
-- **[Azure Best Practices](azure-bestpractices.md)** - Security guidelines enforcing zero API keys policy
-- **[Bicep Deployment Best Practices](bicep-deployment-bestpractices.md)** - Infrastructure as Code guidelines for azd integration
-
-### Documentation & Compliance
-- **Create README**: `/newReadme` - Generate a comprehensive README with standard IP structure
-- **IP Compliance**: `/ipCompliance` - Comprehensive compliance assessment for Azure Developer CLI templates
-- **IP Metadata**: `/ipMetadata` - Create or update IP metadata file with standard structure
-
-### Research
-- **Research Plan**: `/research-plan` - Generate research plan with scope snapshot, topics, and search terms
-- **Research Collect**: `/research-collect` - Execute per-refined-search-term collection with docs extraction
-
-### Custom Agents
-- **Azure Docs Research**: `@azure-docs-research` - Azure documentation research specialist with Context7 and Azure MCP sources
-
-> **Note**: All prompts and agents default to **Claude Opus 4.6** with Claude Sonnet 4 as fallback. Model preference is set via the `model` array in YAML frontmatter.
-
-## Usage
-
-Type the prompt command in any chat or inline chat session with GitHub Copilot to execute the corresponding task.
-
-Examples:
 ```
-/newPythonApp
-/newNodeApp
-/newDotNetApp
-/newReactApp
-/newGradioApp
-/newStreamlitApp
-/newAgentApp
-/setupInfra
-/addAzdService
-/checkAzdCompliance
-/newReadme
-/ipCompliance
+template/
+├── .github/
+│   ├── skills/              # Copilot skills (SDK/framework reference)
+│   ├── instructions/        # Path-specific coding standards
+│   ├── prompts/             # Reusable task workflows
+│   ├── agents/              # Custom agent personas
+│   ├── templates/           # Research workflow templates
+│   ├── azure-bestpractices.md          # Zero-trust security policy
+│   └── bicep-deployment-bestpractices.md # Bicep + azd patterns
+├── infra/                   # Bicep infrastructure (main.bicep + core/ modules)
+├── src/                     # Application source code
+├── azure.yaml               # Azure Developer CLI configuration
+└── AGENTS.md                # Agent roles and collaboration
 ```
 
-## Prompt Files Location
+## Skills (`.github/skills/`)
 
-All prompt files are located in `.github/prompts/` directory:
-- `newPythonApp.prompt.md` - Python FastAPI application creation
-- `newNodeApp.prompt.md` - Node.js/TypeScript Express application creation
-- `newDotNetApp.prompt.md` - ASP.NET Core Web API application creation
-- `newReactApp.prompt.md` - React + Vite + Tailwind CSS application creation
-- `newGradioApp.prompt.md` - Gradio application creation for interactive UIs
-- `newStreamlitApp.prompt.md` - Streamlit application creation for data science UIs
-- `newAgentApp.prompt.md` - Microsoft Agent Framework application creation
-- `setupInfra.prompt.md` - Infrastructure setup with Bicep
-- `addAzdService.prompt.md` - Azure Developer CLI service configuration
-- `checkAzdCompliance.prompt.md` - Azure Developer CLI compliance validation
-- `newReadme.prompt.md` - README file generation
-- `ipCompliance.prompt.md` - IP compliance validation and assessment
-- `ipMetadata.prompt.md` - IP metadata standardization
-- `research-plan.prompt.md` - Research planning with structured templates
-- `research-collect.prompt.md` - Research collection with docs extraction
+Skills provide SDK and framework knowledge that Copilot loads on demand. Always prefer skills over inlining SDK code in prompts or instructions.
 
-## Custom Agents Location
+| Skill | Domain |
+|-------|--------|
+| `azd-deployment` | Azure Developer CLI + Container Apps deployment |
+| `bicep-azd-patterns` | Bicep templates, parameters, outputs for azd |
+| `azure-identity-py` | Azure Identity SDK (DefaultAzureCredential, managed identity) |
+| `azure-storage-blob-py` | Azure Blob Storage SDK |
+| `azure-ai-projects-ts` | Azure AI Projects SDK for TypeScript |
+| `agent-framework-azure-ai-py` | Microsoft Agent Framework (Azure AI hosted agents) |
+| `agents-v2-py` / `hosted-agents-v2-py` | Container-based Foundry Agents |
+| `m365-agents-py` | Microsoft 365 Agents SDK |
+| `copilot-sdk` | GitHub Copilot SDK (Node, Python, Go, .NET) |
+| `fastapi-router-py` | FastAPI router patterns with CRUD + auth |
+| `mcp-builder` | MCP server development (Python, TypeScript, C#) |
+| `containerization` | Docker multi-stage builds for Azure Container Apps |
 
-Custom agents are located in `.github/agents/` directory:
-- `azure-docs-research.agent.md` - Azure documentation research specialist
+## Build & Deploy
 
-## Customization
+```bash
+azd auth login          # Authenticate
+azd init                # Initialize project
+azd env new <name>      # Create environment
+azd up                  # Provision + deploy (or azd provision && azd deploy)
+```
 
-Each prompt file can be customized to match your specific project requirements and coding standards. The prompts are designed to work with the existing repository structure and Azure infrastructure templates.
+Validate before deploying:
+```bash
+az bicep build --file infra/main.bicep --stdout | Out-Null   # Bicep syntax
+azd provision --preview                                       # What-if check
+```
 
-## Development Standards
+## Core Conventions
 
-When using these prompts, ensure adherence to the following standards:
+### Security (MANDATORY)
+- **NEVER use API keys** for Azure services — see [azure-bestpractices.md](azure-bestpractices.md)
+- Use `ChainedTokenCredential(AzureDeveloperCliCredential(), ManagedIdentityCredential())`
+- Always set `AZURE_CLIENT_ID` in Container Apps environment variables
+- Use the `azure-identity-py` skill for implementation patterns
 
-### Logging & Error Handling
-- **Logging**: Always use proper logging modules (Python's `logging`, Node.js `winston`) - never use `print()` or `console.log()` in production code
-- **Structured Logging**: Use JSON format for production environments with appropriate log levels (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-- **Error Handling**: Implement structured error handling with meaningful error messages and proper exception handling
-- **Observability**: Include OpenTelemetry tracing for distributed systems and performance monitoring
+### Code Quality
+- **Python**: uv package manager, type hints, `logging` module (never `print()`), Ruff/Black, pytest
+- **TypeScript**: npm, strict types, ESLint/Prettier, Jest/Vitest
+- **.NET**: .NET 9, xUnit, IOptions pattern
+- **All languages**: Structured error handling, OpenTelemetry tracing, health check endpoints
 
-### Code Quality & Security
-- **Type Safety**: Use TypeScript for Node.js/React applications and type hints throughout Python code
-- **Linting & Formatting**: Configure ESLint/Prettier for TypeScript, Ruff/Black for Python
-- **Testing**: Include comprehensive test coverage with Jest (Node.js/React) or pytest (Python)
-- **Security**: Implement security best practices including input validation, sanitization, and proper authentication
-- **Dependency Management**: Use safe version pinning (>= and < operators) to prevent major version upgrades
-
-### Azure Integration
-- **Authentication**: Use ChainedTokenCredential with AzureDeveloperCliCredential + ManagedIdentityCredential pattern
-- **Environment Variables**: Always include `AZURE_CLIENT_ID` for managed identity authentication in Azure Container Apps
-- **Configuration**: Always update `azure.yaml` when creating new applications to ensure proper deployment configuration
-- **Infrastructure**: Update `infra/main.bicep` with new container app modules and proper parameter configuration
-- **Monitoring**: Integrate Application Insights with OpenTelemetry for comprehensive observability
-- **Security**: **NEVER use API keys** - follow [Azure Best Practices](./azure-bestpractices.md) for secure authentication
+### Infrastructure
+- Follow [bicep-deployment-bestpractices.md](bicep-deployment-bestpractices.md) and the `bicep-azd-patterns` skill
+- Use modules from `infra/core/` — never inline resource definitions in main.bicep
+- Use `abbreviations.json` for resource naming
+- Always include `azd-env-name` tag and `azd-service-name` tags for service resources
 
 ### Containerization
-- **Multi-stage Builds**: Use optimized Dockerfiles with multi-stage builds for smaller production images
-- **Base Images**: Use Azure Linux base images (mcr.microsoft.com/azurelinux/base/*)
-- **Security**: Run containers as non-root user with proper health checks
-- **Port Configuration**: Use port 80 for Azure Container Apps deployment
+- Use the `containerization` skill for Dockerfile patterns
+- Azure Linux base images (`mcr.microsoft.com/azurelinux/base/*`)
+- Multi-stage builds, non-root user, port 80, health checks
 
-### Development Experience
-- **Package Managers**: Use uv for Python, npm for Node.js/React applications
-- **Environment Management**: Include .python-version (Python) and .nvmrc (Node.js) files
-- **Documentation**: Provide comprehensive README files with setup, configuration, and deployment instructions
-- **Git Workflow**: Create feature branches with descriptive names (feature/add-{app-name})
-
-### Application Architecture
-- **Clean Structure**: Follow modular architecture with clear separation of concerns
-- **Configuration Management**: Use pydantic-settings (Python) or environment-based config (Node.js)
-- **API Design**: Follow RESTful principles with proper HTTP status codes and error responses
-- **Performance**: Implement caching strategies and async patterns where appropriate
+### Git Workflow
+- Feature branches: `feature/add-{app-name}`
+- Dependency pinning: `>=` and `<` operators to prevent major version breaks

@@ -3,9 +3,11 @@ agent: 'agent'
 model:
   - Claude Opus 4.6 (copilot)
   - Claude Sonnet 4 (copilot)
-tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCommands']
+tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCommands', 'mcp']
 description: 'Create a new Streamlit application for interactive data science UIs and AI demos following best practices'
 ---
+
+**Skills**: Load `azure-identity-py` and `containerization` skills for managed identity auth and Dockerfile templates.
 
 # Create New Streamlit Application
 
@@ -15,15 +17,7 @@ description: 'Create a new Streamlit application for interactive data science UI
 
 **Application Name**: ${input:appName:my-streamlit-app}
 
-## Research Context (Optional - If Available)
-
-If research planning and collection templates were completed prior to this task, reference them here for implementation guidance:
-
-**Plan File Used**: ${input:planFile:[plan filename or N/A]}
-**Collection File Used**: ${input:collectionFile:[collection filename or N/A]}
-**Date**: [YYYY-MM-DD]
-**Collector**: ${input:collector:[Agent/User or N/A]}
-**Initial Prompt (verbatim)**: ${input:initialPrompt:[original research question or N/A]}
+> **Research context**: Optionally reference a plan from `.github/scratchpad/research-plan-*.md` and collection from `.github/scratchpad/research-collection-*.md`.
 **Referenced Research Plan**: ${input:researchPlan:[plan filename or N/A]}
 
 **Research Artifacts Location**: 
@@ -503,7 +497,8 @@ Create a comprehensive `README.md` for the Streamlit app with:
 2. Set up environment variables in `.streamlit/secrets.toml`:
    ```toml
    AZURE_OPENAI_ENDPOINT = "your-endpoint"
-   AZURE_OPENAI_API_KEY = "your-key"
+   # Auth handled via DefaultAzureCredential — no API keys needed
+   # See .github/azure-bestpractices.md
    ```
 
 3. Run the application:
