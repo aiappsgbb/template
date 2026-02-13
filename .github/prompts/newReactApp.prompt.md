@@ -3,7 +3,7 @@ agent: 'agent'
 model:
   - Claude Opus 4.6 (copilot)
   - Claude Sonnet 4 (copilot)
-tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCommands', 'mcp']
+tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'git_branch', 'runCommands']
 description: 'Create a new React + Vite + Tailwind CSS application following best practices and a simplified structure'
 ---
 

@@ -9,41 +9,44 @@ This file defines AI agents and their capabilities for the Azure Template Projec
 **Type**: Infrastructure Template & Development Framework
 **Owner**: AI Apps GBB Team
 
-## Primary Agents
+## Custom Agents (`.github/agents/`)
 
-### Azure Infrastructure Architect
+Select **`GBB`** from the agents dropdown in Copilot Chat — it is the **only user-facing agent**. All other agents are internal specialists that `GBB` routes to via handoff buttons. Their descriptions are prefixed with `[Internal sub-agent]` so you know to ignore them in the dropdown.
 
-**Role**: Infrastructure Design & Deployment Specialist
+| Agent | Role | How It's Used | Hands Off To |
+|-------|------|---------------|:------------:|
+| **GBB** | Primary orchestrator — guides the full workflow, routes to specialists | **Select this one** | app-developer, infra-architect, azure-docs-research |
+| app-developer | Scaffolds applications across Python, TypeScript, .NET, AI agents | Auto-routed via handoff | infra-architect, azure-docs-research |
+| infra-architect | Bicep infrastructure, azd config, compliance validation | Auto-routed via handoff | app-developer, azure-docs-research |
+| azure-docs-research | Gathers authoritative Azure SDK/service documentation | Auto-routed via handoff | app-developer, infra-architect |
 
-**Skills**: `azd-deployment`, `bicep-azd-patterns`
+### Workflow
 
-**Context Files**: `infra/**/*.bicep`, `azure.yaml`, `infra/main.parameters.json`, `infra/abbreviations.json`
+```
+GBB (start here)
+    ├── azure-docs-research → collect docs → hand off to app-developer
+    ├── app-developer → scaffold app → hand off to infra-architect
+    └── infra-architect → set up Bicep + azd → /checkAzdCompliance → azd up
+```
 
-**References**: [azure-bestpractices.md](.github/azure-bestpractices.md), [bicep-deployment-bestpractices.md](.github/bicep-deployment-bestpractices.md)
+## Skills (shared across all agents)
 
-### Application Developer
+Skills in `.github/skills/` load on demand by keyword trigger. They are **cross-cutting** — every agent benefits from them automatically.
 
-**Role**: Multi-Language Application Development Specialist
-
-**Skills**: `fastapi-router-py`, `azure-identity-py`, `azure-storage-blob-py`, `agent-framework-azure-ai-py`, `m365-agents-py`, `copilot-sdk`, `containerization`
-
-**Context Files**: `src/**/*`, `.github/prompts/**/*.prompt.md`, `azure.yaml`
-
-### DevOps Engineer
-
-**Role**: Automation & Deployment Specialist
-
-**Skills**: `azd-deployment`, `containerization`, `mcp-builder`
-
-**Context Files**: `.github/workflows/**/*`, `azure.yaml`, `infra/scripts/**/*.py`
-
-### AI Solutions Architect
-
-**Role**: AI/ML Integration & Optimization Specialist
-
-**Skills**: `agent-framework-azure-ai-py`, `agents-v2-py`, `hosted-agents-v2-py`, `azure-ai-projects-ts`, `m365-agents-py`
-
-**Context Files**: `infra/core/ai/**/*.bicep`, `src/**/*`
+| Skill | Domain |
+|-------|--------|
+| `azd-deployment` | Azure Developer CLI + Container Apps deployment |
+| `bicep-azd-patterns` | Bicep templates, parameters, outputs for azd |
+| `containerization` | Docker multi-stage builds for Azure Container Apps |
+| `azure-identity-py` | Azure Identity SDK (DefaultAzureCredential, managed identity) |
+| `azure-storage-blob-py` | Azure Blob Storage SDK |
+| `fastapi-router-py` | FastAPI router patterns with CRUD + auth |
+| `azure-ai-projects-ts` | Azure AI Projects SDK for TypeScript |
+| `agent-framework-azure-ai-py` | Microsoft Agent Framework (Azure AI hosted agents) |
+| `agents-v2-py` / `hosted-agents-v2-py` | Container-based Foundry Agents |
+| `m365-agents-py` | Microsoft 365 Agents SDK |
+| `copilot-sdk` | GitHub Copilot SDK (Node, Python, Go, .NET) |
+| `mcp-builder` | MCP server development (Python, TypeScript, C#) |
 
 ## Key Technologies
 
@@ -53,15 +56,16 @@ This file defines AI agents and their capabilities for the Azure Template Projec
 - **Monitoring**: Azure Monitor, Application Insights, OpenTelemetry
 - **Languages**: Python (uv, FastAPI, Gradio, Streamlit), TypeScript (npm, Express, React, Vite), .NET 9 (ASP.NET Core)
 
-## Customization Hierarchy
+## Copilot Customization Hierarchy
 
-Copilot uses these files in priority order:
-
-1. **`.github/copilot-instructions.md`** — Repository-wide conventions (always loaded)
-2. **`.github/instructions/*.instructions.md`** — Path-specific rules (loaded when editing matching files)
-3. **`.github/skills/*/SKILL.md`** — SDK/framework reference (loaded on demand by keyword triggers)
-4. **`.github/prompts/*.prompt.md`** — Reusable task workflows (user-invoked)
-5. **`.github/agents/*.agent.md`** — Custom agent personas
+| Priority | File(s) | Loaded When |
+|----------|---------|-------------|
+| 1 | `.github/copilot-instructions.md` | Always (every chat) |
+| 2 | `.github/instructions/*.instructions.md` | Editing files matching `applyTo` pattern |
+| 3 | `.github/skills/*/SKILL.md` | On demand (keyword triggers) |
+| 4 | `.github/prompts/*.prompt.md` | User-invoked (`/promptName`) |
+| 5 | `.github/agents/*.agent.md` | `GBB` selected by user; sub-agents via handoff |
+| 6 | `AGENTS.md` | Agent-level instructions |
 
 ## Anti-Patterns to Avoid
 

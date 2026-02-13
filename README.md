@@ -22,14 +22,15 @@ Click the **"Use this template"** button on GitHub to create a new repository fr
 
 ### 2. Research (Optional but Recommended)
 
-Before writing code, use the `azure-docs-research` agent (`.github/agents/`) to gather up-to-date documentation on the Azure services you plan to use:
+Ask **`GBB`** to research Azure documentation for your project. It hands off to the internal research agent, which handles both planning and collection in a single session using:
+- **Context7** — resolves library IDs and retrieves SDK-level documentation and code examples
+- **MS Learn** — searches service docs and fetches official code samples
+- **Azure MCP** — Azure service-specific documentation
+- **Web search** — fallback for gaps
 
-| Prompt | What It Does |
-|--------|-------------|
-| `/research-plan` | Generates a structured research plan — scope, topics, libraries, search terms |
-| `/research-collect` | Executes the plan — collects code snippets, configs, and docs into `.github/scratchpad/` |
+You can also invoke the lightweight prompts `/research-plan` and `/research-collect` which delegate to the agent.
 
-Attach the output files to subsequent Copilot chat sessions so every prompt has authoritative context.
+Output lands in `.github/scratchpad/` as structured plan and collection files. Attach those files to subsequent Copilot chat sessions so every prompt has authoritative context.
 
 ### 3. Scaffold Your Application
 
@@ -90,6 +91,23 @@ As you code, Copilot applies the right context without you doing anything:
 - **Mention an SDK** (e.g., "Azure Identity", "FastAPI") → the matching skill loads on demand
 - **Every chat** → repo-wide security policy and conventions are always present
 
+### Custom Agents
+
+Select **`GBB`** from the agents dropdown in Copilot Chat — it's the **only agent you need**. Sub-agents are internal specialists; `GBB` routes to them automatically via handoff buttons. If you see them in the dropdown, ignore them — their descriptions say "Select GBB instead".
+
+| Agent | Role | How It's Used |
+|-------|------|---------------|
+| **GBB** | Primary orchestrator — routes to specialists, guides the full workflow | **Select this one** |
+| app-developer | Scaffolds apps (Python, TypeScript, .NET, AI agents), enforces coding standards | Auto-routed via handoff |
+| infra-architect | Bicep infrastructure, azd config, compliance validation | Auto-routed via handoff |
+| azure-docs-research | Gathers authoritative Azure SDK/service documentation | Auto-routed via handoff |
+
+After each response, `GBB` offers handoff buttons to the relevant specialist. The guided workflow:
+
+```
+GBB → azure-docs-research → app-developer → infra-architect → azd up
+```
+
 ---
 
 ## Repository Structure
@@ -103,7 +121,7 @@ template/
 │   ├── skills/                       # 13 Copilot skills (SDK/framework reference)
 │   ├── instructions/                 # 5 path-specific coding standards
 │   ├── prompts/                      # 15 reusable task workflows
-│   ├── agents/                       # Custom agent personas
+│   ├── agents/                       # 4 custom agents (orchestrator + specialists)
 │   └── templates/                    # Research workflow templates
 ├── infra/
 │   ├── main.bicep                    # Entry point — modules only, no inline resources
@@ -136,7 +154,7 @@ Copilot loads context in this priority order:
 | 2 | `.github/instructions/*.instructions.md` | Editing files matching `applyTo` pattern |
 | 3 | `.github/skills/*/SKILL.md` | On demand (keyword triggers) |
 | 4 | `.github/prompts/*.prompt.md` | User-invoked (`/promptName`) |
-| 5 | `.github/agents/*.agent.md` | User-selected agent persona |
+| 5 | `.github/agents/*.agent.md` | `GBB` selected by user; sub-agents via handoff |
 | 6 | `AGENTS.md` | Agent-level instructions |
 
 ### Path-Specific Instructions (auto-loaded)

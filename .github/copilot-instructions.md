@@ -10,7 +10,7 @@ template/
 │   ├── skills/              # Copilot skills (SDK/framework reference)
 │   ├── instructions/        # Path-specific coding standards
 │   ├── prompts/             # Reusable task workflows
-│   ├── agents/              # Custom agent personas
+│   ├── agents/              # Custom agents (GBB, app-developer, infra-architect, azure-docs-research)
 │   ├── templates/           # Research workflow templates
 │   ├── azure-bestpractices.md          # Zero-trust security policy
 │   └── bicep-deployment-bestpractices.md # Bicep + azd patterns

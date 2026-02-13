@@ -3,7 +3,7 @@ agent: 'agent'
 model:
   - Claude Opus 4.6 (copilot)
   - Claude Sonnet 4 (copilot)
-tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands', 'mcp']
+tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands']
 description: 'Setup Azure infrastructure with Bicep'
 ---
 
