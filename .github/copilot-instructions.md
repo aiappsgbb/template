@@ -27,6 +27,7 @@ Skills provide SDK and framework knowledge that Copilot loads on demand. Always 
 | Skill | Domain |
 |-------|--------|
 | `azd-deployment` | Azure Developer CLI + Container Apps deployment |
+| `azd-compliance` | azd compliance validation, parameter sync, IMAGE_NAME/RESOURCE_EXISTS, tags, hooks, shared subscription safety |
 | `bicep-azd-patterns` | Bicep templates, parameters, outputs for azd |
 | `azure-identity-py` | Azure Identity SDK (DefaultAzureCredential, managed identity) |
 | `azure-storage-blob-py` | Azure Blob Storage SDK |

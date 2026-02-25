@@ -36,6 +36,7 @@ Skills in `.github/skills/` load on demand by keyword trigger. They are **cross-
 | Skill | Domain |
 |-------|--------|
 | `azd-deployment` | Azure Developer CLI + Container Apps deployment |
+| `azd-compliance` | azd compliance validation, parameter sync, IMAGE_NAME/RESOURCE_EXISTS, tags, hooks, shared subscription safety |
 | `bicep-azd-patterns` | Bicep templates, parameters, outputs for azd |
 | `containerization` | Docker multi-stage builds for Azure Container Apps |
 | `azure-identity-py` | Azure Identity SDK (DefaultAzureCredential, managed identity) |

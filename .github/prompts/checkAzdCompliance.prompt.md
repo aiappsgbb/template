@@ -7,7 +7,7 @@ tools: ['githubRepo', 'search/codebase', 'edit', 'changes', 'runCommands']
 description: 'Validate Azure Developer CLI (azd) compliance - focus on what breaks deployments'
 ---
 
-**Skills**: Load `azd-deployment` and `bicep-azd-patterns` skills for current azd schema, Bicep conventions, and IMAGE_NAME/RESOURCE_EXISTS patterns.
+**Skills**: Load `azd-compliance` skill (or `azd-deployment` + `bicep-azd-patterns`) for current azd schema, Bicep conventions, and IMAGE_NAME/RESOURCE_EXISTS patterns.
 
 Validate Azure Developer CLI (azd) configuration to catch issues that would break `azd provision` or `azd deploy`.
 
