@@ -1,5 +1,5 @@
 ---
-name: azd-compliance
+name: aigbb-azd-compliance
 description: "Validate and deploy Azure Developer CLI (azd) projects with compliance-first patterns. Covers azure.yaml configuration, Bicep parameter sync, Container Apps image preservation (IMAGE_NAME/RESOURCE_EXISTS), service-to-resource binding, azd tags, hook scripts, shared subscription safety, and pre-flight validation. Use when setting up azd projects, writing azure.yaml, validating Bicep infrastructure for Container Apps, troubleshooting azd up failures, running compliance checks, or preparing for deployment. Triggers on azd, azure.yaml, azd compliance, azd deploy, azd provision, azd up, Container Apps deployment, IMAGE_NAME, RESOURCE_EXISTS, remoteBuild, azd tags, parameter mismatch, pre-flight check, deployment validation."
 ---
 

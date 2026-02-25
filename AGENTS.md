@@ -33,12 +33,29 @@ GBB (start here)
 
 Skills in `.github/skills/` load on demand by keyword trigger. They are **cross-cutting** — every agent benefits from them automatically.
 
+For community-contributed skills, see the **[microsoft/skills](https://github.com/microsoft/skills)** repository — a curated collection of reusable Copilot skills you can add to any project.
+
+### Best-Practice Skills
+
+| Skill | Domain |
+|-------|--------|
+| `aigbb-azure-security` | Zero-trust auth (ChainedTokenCredential), env var policy, RBAC, managed identity — cross-language |
+| `aigbb-observability` | OpenTelemetry + Application Insights, structured logging, health checks — Python, TypeScript, .NET |
+| `aigbb-ip-standards` | IP metadata schema, compliance checklists, maturity levels, repository structure requirements |
+| `aigbb-azd-compliance` | azd compliance validation, parameter sync, IMAGE_NAME/RESOURCE_EXISTS, tags, hooks, shared subscription safety |
+
+### Infrastructure & Deployment Skills
+
 | Skill | Domain |
 |-------|--------|
 | `azd-deployment` | Azure Developer CLI + Container Apps deployment |
-| `azd-compliance` | azd compliance validation, parameter sync, IMAGE_NAME/RESOURCE_EXISTS, tags, hooks, shared subscription safety |
 | `bicep-azd-patterns` | Bicep templates, parameters, outputs for azd |
 | `containerization` | Docker multi-stage builds for Azure Container Apps |
+
+### SDK & Framework Skills
+
+| Skill | Domain |
+|-------|--------|
 | `azure-identity-py` | Azure Identity SDK (DefaultAzureCredential, managed identity) |
 | `azure-storage-blob-py` | Azure Blob Storage SDK |
 | `fastapi-router-py` | FastAPI router patterns with CRUD + auth |

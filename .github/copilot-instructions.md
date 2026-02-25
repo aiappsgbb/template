@@ -7,13 +7,12 @@ Comprehensive Azure Developer CLI template for modern cloud applications with AI
 ```
 template/
 ├── .github/
-│   ├── skills/              # Copilot skills (SDK/framework reference)
+│   ├── skills/              # Copilot skills — best practices & SDK reference (see microsoft/skills)
 │   ├── instructions/        # Path-specific coding standards
 │   ├── prompts/             # Reusable task workflows
 │   ├── agents/              # Custom agents (GBB, app-developer, infra-architect, azure-docs-research)
-│   ├── templates/           # Research workflow templates
-│   ├── azure-bestpractices.md          # Zero-trust security policy
-│   └── bicep-deployment-bestpractices.md # Bicep + azd patterns
+│   ├── azure-bestpractices.md          # Zero-trust security policy (→ aigbb-azure-security skill)
+│   └── bicep-deployment-bestpractices.md # Bicep + azd patterns (→ bicep-azd-patterns skill)
 ├── infra/                   # Bicep infrastructure (main.bicep + core/ modules)
 ├── src/                     # Application source code
 ├── azure.yaml               # Azure Developer CLI configuration
@@ -24,11 +23,29 @@ template/
 
 Skills provide SDK and framework knowledge that Copilot loads on demand. Always prefer skills over inlining SDK code in prompts or instructions.
 
+For community-contributed skills, see the **[microsoft/skills](https://github.com/microsoft/skills)** repository — a curated collection of reusable Copilot skills you can add to any project.
+
+### Best-Practice Skills
+
+| Skill | Domain |
+|-------|--------|
+| `aigbb-azure-security` | Zero-trust auth (ChainedTokenCredential), env var policy, RBAC, managed identity — cross-language |
+| `aigbb-observability` | OpenTelemetry + Application Insights, structured logging, health checks — Python, TypeScript, .NET |
+| `aigbb-ip-standards` | IP metadata schema, compliance checklists, maturity levels, repository structure requirements |
+| `aigbb-azd-compliance` | azd compliance validation, parameter sync, IMAGE_NAME/RESOURCE_EXISTS, tags, hooks, shared subscription safety |
+
+### Infrastructure & Deployment Skills
+
 | Skill | Domain |
 |-------|--------|
 | `azd-deployment` | Azure Developer CLI + Container Apps deployment |
-| `azd-compliance` | azd compliance validation, parameter sync, IMAGE_NAME/RESOURCE_EXISTS, tags, hooks, shared subscription safety |
 | `bicep-azd-patterns` | Bicep templates, parameters, outputs for azd |
+| `containerization` | Docker multi-stage builds for Azure Container Apps |
+
+### SDK & Framework Skills
+
+| Skill | Domain |
+|-------|--------|
 | `azure-identity-py` | Azure Identity SDK (DefaultAzureCredential, managed identity) |
 | `azure-storage-blob-py` | Azure Blob Storage SDK |
 | `azure-ai-projects-ts` | Azure AI Projects SDK for TypeScript |
@@ -38,7 +55,6 @@ Skills provide SDK and framework knowledge that Copilot loads on demand. Always 
 | `copilot-sdk` | GitHub Copilot SDK (Node, Python, Go, .NET) |
 | `fastapi-router-py` | FastAPI router patterns with CRUD + auth |
 | `mcp-builder` | MCP server development (Python, TypeScript, C#) |
-| `containerization` | Docker multi-stage builds for Azure Container Apps |
 
 ## Build & Deploy
 
@@ -58,10 +74,10 @@ azd provision --preview                                       # What-if check
 ## Core Conventions
 
 ### Security (MANDATORY)
-- **NEVER use API keys** for Azure services — see [azure-bestpractices.md](azure-bestpractices.md)
+- **NEVER use API keys** for Azure services — see the `aigbb-azure-security` skill and [azure-bestpractices.md](azure-bestpractices.md)
 - Use `ChainedTokenCredential(AzureDeveloperCliCredential(), ManagedIdentityCredential())`
 - Always set `AZURE_CLIENT_ID` in Container Apps environment variables
-- Use the `azure-identity-py` skill for implementation patterns
+- Use the `aigbb-azure-security` skill for cross-language auth patterns; `azure-identity-py` for Python-specific details
 
 ### Code Quality
 - **Python**: uv package manager, type hints, `logging` module (never `print()`), Ruff/Black, pytest
