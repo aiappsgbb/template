@@ -184,8 +184,8 @@ These are safe — they contain no secrets:
 
 ```bicep
 // Always create a User Assigned Managed Identity
-module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
-  name: 'user-assigned-identity'
+module managedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
+  name: 'managed-identity'
   params: {
     name: '${abbrs.managedIdentityUserAssignedIdentities}${environmentName}'
     location: location
@@ -197,15 +197,22 @@ module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
 ### Assign to Container Apps
 
 ```bicep
-module containerApp 'core/host/container-app.bicep' = {
+module containerApp 'br/public:avm/res/app/container-app:0.18.1' = {
   name: 'container-app'
   params: {
-    userAssignedIdentityId: userAssignedIdentity.outputs.id
-    managedIdentityPrincipalId: userAssignedIdentity.outputs.principalId
-    environmentVariables: [
+    managedIdentities: {
+      userAssignedResourceIds: [managedIdentity.outputs.resourceId]
+    }
+    containers: [
       {
-        name: 'AZURE_CLIENT_ID'
-        value: userAssignedIdentity.outputs.clientId   // ← REQUIRED
+        name: 'main'
+        image: containerImage
+        env: [
+          {
+            name: 'AZURE_CLIENT_ID'
+            value: managedIdentity.outputs.clientId   // ← REQUIRED
+          }
+        ]
       }
     ]
   }

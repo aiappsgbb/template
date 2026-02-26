@@ -159,9 +159,14 @@ main.bicep:
 param apiImageName string = ''
 param apiExists bool = false
 
-module api 'core/host/container-app.bicep' = {
+module api 'br/public:avm/res/app/container-app:0.18.1' = {
   params: {
-    containerImage: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+    containers: [
+      {
+        name: 'main'
+        image: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+      }
+    ]
   }
 }
 ```
@@ -181,7 +186,12 @@ module api 'core/host/container-app.bicep' = {
 
 ```bicep
 // WRONG — deploys blank image when apiImageName is empty
-containerImage: apiImageName    // Should use !empty() guard
+containers: [
+  {
+    name: 'main'
+    image: apiImageName    // Should use !empty() guard
+  }
+]
 ```
 
 ### 3.4 ❌ INCORRECT: Missing Default Suffix

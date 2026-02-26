@@ -5,10 +5,9 @@ This document outlines essential best practices for Bicep infrastructure templat
 ## 🏗️ Core Principles
 
 ### 1. Template Reusability
-- **Always use modules from `infra/core/`** - Never inline resource definitions in main.bicep
-- **Leverage Azure Verified Modules (AVM)** when available for standard resources
-- **Create custom modules** for organization-specific patterns under `infra/core/`
+- **Always use Azure Verified Modules (AVM) directly** via `br/public:avm/res/...` — no wrapper modules
 - **Parameterize everything** - No hardcoded values in templates
+- **Keep utility modules** in `infra/core/` only for custom patterns without AVM equivalents
 
 ### 2. Security First
 - **Managed Identity Only** - Never use access keys or connection strings for authentication
@@ -59,8 +58,8 @@ var tags = {
 }
 
 // 4. SHARED INFRASTRUCTURE
-module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
-  name: 'user-assigned-identity'
+module managedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
+  name: 'managed-identity'
   params: {
     name: '${abbrs.managedIdentityUserAssignedIdentities}${environmentName}'
     location: location
@@ -68,63 +67,87 @@ module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
   }
 }
 
-module keyVault 'core/security/keyvault.bicep' = {
+module keyVault 'br/public:avm/res/key-vault/vault:0.13.3' = {
   name: 'keyvault'
   params: {
     name: '${abbrs.keyVaultVaults}${environmentName}'
     location: location
     tags: tags
-    principalId: principalId
-    managedIdentityPrincipalId: userAssignedIdentity.outputs.principalId
   }
 }
 
 // 5. HOSTING INFRASTRUCTURE
-module containerAppsEnvironment 'core/host/container-apps-environment.bicep' = {
+module logAnalyticsWorkspace 'br/public:avm/res/operational-insights/workspace:0.12.0' = {
+  name: 'log-analytics'
+  params: {
+    name: '${abbrs.operationalInsightsWorkspaces}${environmentName}'
+    location: location
+    tags: tags
+  }
+}
+
+module applicationInsights 'br/public:avm/res/insights/component:0.6.0' = {
+  name: 'application-insights'
+  params: {
+    name: '${abbrs.insightsComponents}${environmentName}'
+    location: location
+    tags: tags
+    workspaceResourceId: logAnalyticsWorkspace.outputs.resourceId
+  }
+}
+
+resource logWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
+  name: logAnalyticsWorkspace.outputs.name
+}
+
+module containerAppsEnvironment 'br/public:avm/res/app/managed-environment:0.11.3' = {
   name: 'container-apps-environment'
   params: {
     name: '${abbrs.appManagedEnvironments}${environmentName}'
     location: location
     tags: tags
-    applicationInsightsName: monitoring.outputs.applicationInsightsName
-    logAnalyticsWorkspaceName: monitoring.outputs.logAnalyticsWorkspaceName
+    appLogsConfiguration: {
+      destination: 'log-analytics'
+      logAnalyticsConfiguration: {
+        customerId: logWorkspace.properties.customerId
+        sharedKey: logWorkspace.listKeys().primarySharedKey
+      }
+    }
   }
 }
 
 // 6. APPLICATION MODULES
-module apiApp 'core/host/container-app.bicep' = {
+module apiApp 'br/public:avm/res/app/container-app:0.18.1' = {
   name: 'api-app'
   params: {
     name: '${abbrs.appContainerApps}api-${environmentName}'
     location: location
-    tags: tags
-    containerAppsEnvironmentId: containerAppsEnvironment.outputs.id
-    containerRegistryName: containerRegistry.outputs.name
-    userAssignedIdentityId: userAssignedIdentity.outputs.id
-    managedIdentityPrincipalId: userAssignedIdentity.outputs.principalId
-    githubActions: githubActions
-    containerImage: apiAppImage
-    containerPort: 80
-    environmentVariables: [
-      // CRITICAL: Always include AZURE_CLIENT_ID
+    tags: union(tags, { 'azd-service-name': 'api' })
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+    containers: [
       {
-        name: 'AZURE_CLIENT_ID'
-        value: userAssignedIdentity.outputs.clientId
+        name: 'main'
+        image: apiAppImage
+        resources: { cpu: json('1'), memory: '2Gi' }
+        env: [
+          // CRITICAL: Always include AZURE_CLIENT_ID
+          { name: 'AZURE_CLIENT_ID', value: managedIdentity.outputs.clientId }
+          // Application-specific variables
+          { name: 'APPLICATION_INSIGHTS_CONNECTION_STRING', value: applicationInsights.outputs.connectionString }
+          { name: 'AZURE_KEY_VAULT_ENDPOINT', value: keyVault.outputs.uri }
+        ]
       }
-      // Application-specific variables
-      {
-        name: 'APPLICATION_INSIGHTS_CONNECTION_STRING'
-        value: monitoring.outputs.applicationInsightsConnectionString
-      }
-      {
-        name: 'AZURE_KEY_VAULT_ENDPOINT'
-        value: keyVault.outputs.endpoint
-      }
-      // Add other required environment variables
     ]
-    resources: {
-      cpu: 1
-      memory: '2Gi'
+    ingressExternal: true
+    ingressTargetPort: 80
+    registries: [
+      {
+        server: containerRegistry.outputs.loginServer
+        identity: managedIdentity.outputs.resourceId
+      }
+    ]
+    managedIdentities: {
+      userAssignedResourceIds: [managedIdentity.outputs.resourceId]
     }
   }
 }
@@ -134,15 +157,15 @@ output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 
 // Identity Outputs
-output AZURE_CLIENT_ID string = userAssignedIdentity.outputs.clientId
-output AZURE_PRINCIPAL_ID string = userAssignedIdentity.outputs.principalId
+output AZURE_CLIENT_ID string = managedIdentity.outputs.clientId
+output AZURE_PRINCIPAL_ID string = managedIdentity.outputs.principalId
 
 // Service Endpoints
 output API_ENDPOINT string = apiApp.outputs.fqdn
 output API_NAME string = apiApp.outputs.name
 
 // Infrastructure Outputs
-output AZURE_KEY_VAULT_ENDPOINT string = keyVault.outputs.endpoint
+output AZURE_KEY_VAULT_ENDPOINT string = keyVault.outputs.uri
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
 ```
 
@@ -208,8 +231,8 @@ param enableMonitoring bool = true
 
 ```bicep
 // 1. Create User Assigned Managed Identity
-module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
-  name: 'user-assigned-identity'
+module managedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
+  name: 'managed-identity'
   params: {
     name: '${abbrs.managedIdentityUserAssignedIdentities}${environmentName}'
     location: location
@@ -217,16 +240,23 @@ module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
   }
 }
 
-// 2. Assign to Container Apps
-module containerApp 'core/host/container-app.bicep' = {
+// 2. Assign to Container Apps via AVM
+module containerApp 'br/public:avm/res/app/container-app:0.18.1' = {
   name: 'container-app'
   params: {
-    userAssignedIdentityId: userAssignedIdentity.outputs.id
-    managedIdentityPrincipalId: userAssignedIdentity.outputs.principalId
-    environmentVariables: [
+    managedIdentities: {
+      userAssignedResourceIds: [managedIdentity.outputs.resourceId]
+    }
+    containers: [
       {
-        name: 'AZURE_CLIENT_ID'
-        value: userAssignedIdentity.outputs.clientId  // ✅ REQUIRED
+        name: 'main'
+        image: containerImage
+        env: [
+          {
+            name: 'AZURE_CLIENT_ID'
+            value: managedIdentity.outputs.clientId  // ✅ REQUIRED
+          }
+        ]
       }
     ]
   }
@@ -234,11 +264,11 @@ module containerApp 'core/host/container-app.bicep' = {
 
 // 3. Configure RBAC for Azure Services
 resource keyVaultSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.id, userAssignedIdentity.outputs.principalId, 'Key Vault Secrets User')
+  name: guid(keyVault.id, managedIdentity.outputs.principalId, 'Key Vault Secrets User')
   scope: keyVault
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
-    principalId: userAssignedIdentity.outputs.principalId
+    principalId: managedIdentity.outputs.principalId
     principalType: 'ServicePrincipal'
   }
 }
@@ -309,7 +339,7 @@ environmentVariables: [
   // Identity - ALWAYS REQUIRED
   {
     name: 'AZURE_CLIENT_ID'
-    value: userAssignedIdentity.outputs.clientId
+    value: managedIdentity.outputs.clientId
   }
   // Service Endpoints - Match settings class exactly
   {
@@ -367,56 +397,46 @@ DEBUG=false
 ### Container App Module Standards
 
 ```bicep
-// Standard Container App configuration
-module containerApp 'core/host/container-app.bicep' = {
+// Standard Container App configuration using AVM
+module containerApp 'br/public:avm/res/app/container-app:0.18.1' = {
   name: 'container-app-name'
   params: {
     // Required Parameters
     name: '${abbrs.appContainerApps}service-${environmentName}'
     location: location
-    tags: tags
-    
+    tags: union(tags, { 'azd-service-name': 'service' })
+
+    // Link to Container Apps Environment
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+
     // Container Configuration
-    containerImage: serviceImage
-    containerPort: 80  // Standard for web applications
-    
-    // Identity & Security
-    userAssignedIdentityId: userAssignedIdentity.outputs.id
-    managedIdentityPrincipalId: userAssignedIdentity.outputs.principalId
-    
-    // Infrastructure References
-    containerAppsEnvironmentId: containerAppsEnvironment.outputs.id
-    containerRegistryName: containerRegistry.outputs.name
-    
-    // Resource Allocation
-    resources: {
-      cpu: 1        // Adjust based on application needs
-      memory: '2Gi' // Adjust based on application needs
-    }
-    
-    // Scaling Configuration
-    scale: {
-      minReplicas: 1
-      maxReplicas: 10
-      rules: [
-        {
-          name: 'http-scaling'
-          http: {
-            metadata: {
-              concurrentRequests: '10'
-            }
-          }
-        }
-      ]
-    }
-    
-    // Environment Variables - CRITICAL ALIGNMENT
-    environmentVariables: [
-      // ... as shown above
+    containers: [
+      {
+        name: 'main'
+        image: serviceImage
+        resources: { cpu: json('1'), memory: '2Gi' }
+        env: [
+          // ... environment variables (CRITICAL ALIGNMENT)
+        ]
+      }
     ]
-    
-    // Deployment Configuration
-    githubActions: githubActions
+
+    // Ingress
+    ingressExternal: true
+    ingressTargetPort: 80  // Standard for web applications
+
+    // ACR pull via managed identity
+    registries: [
+      {
+        server: containerRegistry.outputs.loginServer
+        identity: managedIdentity.outputs.resourceId
+      }
+    ]
+
+    // Identity
+    managedIdentities: {
+      userAssignedResourceIds: [managedIdentity.outputs.resourceId]
+    }
   }
 }
 ```
@@ -432,13 +452,13 @@ output AZURE_RESOURCE_GROUP string = resourceGroup().name
 output AZURE_ENV_NAME string = environmentName
 
 // Identity Outputs - For authentication
-output AZURE_CLIENT_ID string = userAssignedIdentity.outputs.clientId
-output AZURE_PRINCIPAL_ID string = userAssignedIdentity.outputs.principalId
+output AZURE_CLIENT_ID string = managedIdentity.outputs.clientId
+output AZURE_PRINCIPAL_ID string = managedIdentity.outputs.principalId
 
 // Service Endpoints - For application configuration
 output AZURE_OPENAI_ENDPOINT string = openAi.outputs.endpoint
 output AZURE_SEARCH_ENDPOINT string = searchService.outputs.endpoint
-output AZURE_KEY_VAULT_ENDPOINT string = keyVault.outputs.endpoint
+output AZURE_KEY_VAULT_ENDPOINT string = keyVault.outputs.uri
 
 // Application Endpoints - For testing and integration
 output API_ENDPOINT string = apiApp.outputs.fqdn
@@ -450,7 +470,7 @@ output AZURE_KEY_VAULT_NAME string = keyVault.outputs.name
 
 // Container App Details - For deployment automation
 output API_CONTAINER_APP_NAME string = apiApp.outputs.name
-output API_CONTAINER_APP_ID string = apiApp.outputs.id
+output API_CONTAINER_APP_ID string = apiApp.outputs.resourceId
 ```
 
 ### Output Naming Conventions
@@ -464,7 +484,7 @@ output API_CONTAINER_APP_ID string = apiApp.outputs.id
 
 ### Pre-Deployment Validation
 
-- [ ] All modules use `infra/core/` templates
+- [ ] All modules use Azure Verified Modules (AVM) via `br/public:avm/res/...`
 - [ ] User Assigned Managed Identity is created and assigned
 - [ ] RBAC roles are specific and least-privilege
 - [ ] No API keys or connection strings in templates
@@ -491,7 +511,7 @@ output API_CONTAINER_APP_ID string = apiApp.outputs.id
 ```bicep
 // DON'T: Inline resource definitions
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  // Use module instead: 'core/storage/storage-account.bicep'
+  // Use AVM instead: 'br/public:avm/res/storage/storage-account:0.27.0'
 }
 
 // DON'T: Hardcoded values
@@ -516,8 +536,8 @@ environmentVariables: [
 ### ✅ Use These Patterns Instead
 
 ```bicep
-// DO: Use modules
-module storageAccount 'core/storage/storage-account.bicep' = { ... }
+// DO: Use AVM modules
+module storageAccount 'br/public:avm/res/storage/storage-account:0.27.0' = { ... }
 
 // DO: Parameterize with defaults
 param location string = resourceGroup().location
@@ -533,7 +553,7 @@ output AZURE_STORAGE_ENDPOINT string = storageAccount.outputs.primaryEndpoints.b
 environmentVariables: [
   {
     name: 'AZURE_CLIENT_ID'
-    value: userAssignedIdentity.outputs.clientId
+    value: managedIdentity.outputs.clientId
   }
   // ... other variables
 ]
@@ -574,10 +594,12 @@ def main():
 
 ## 📚 Module Standards
 
-### Custom Module Template
+### Utility Module Template
+
+For custom utilities without AVM equivalents (e.g., `infra/core/host/fetch-container-image.bicep`):
 
 ```bicep
-// infra/core/[category]/[service].bicep
+// infra/core/[category]/[utility].bicep
 targetScope = 'resourceGroup'
 
 @description('Resource name')

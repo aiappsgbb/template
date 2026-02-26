@@ -192,39 +192,38 @@ The template automatically detects:
 - **GITHUB_ACTIONS**: Whether deployment is running in GitHub Actions (sets deployment tags)
 - **AZD_INITIAL_ENVIRONMENT_CONFIG**: Custom configuration parameters as JSON
 
-## Available Infrastructure Modules
+## Azure Verified Modules (AVM)
 
-The template includes several modern Azure services in `infra/core/` using **Azure Verified Modules (AVM)** for standard setups:
+The template uses **Azure Verified Modules (AVM)** directly in `infra/main.bicep` — no wrapper modules needed:
 
 ### **Hosting & Compute**
 
-- **Container Apps Environment**: Serverless container hosting platform (AVM)
-- **Container App**: Deploy containerized applications with auto-scaling and incremental updates (AVM)  
-- **Container Registry**: Store and manage container images (AVM)
-- **Fetch Container Image**: Utility module for faster incremental Container App deployments
+- **Container Apps Environment**: `br/public:avm/res/app/managed-environment` — Serverless container hosting platform
+- **Container App**: `br/public:avm/res/app/container-app` — Deploy containerized applications with auto-scaling
+- **Container Registry**: `br/public:avm/res/container-registry/registry` — Store and manage container images
+- **Fetch Container Image**: Utility module in `infra/core/host/` for faster incremental Container App deployments
 
 ### **Incremental Deployment Support**
 
-The Container App module supports both initial deployment and fast incremental updates:
+The AVM Container App module supports both initial deployment and incremental updates via IMAGE_NAME/RESOURCE_EXISTS:
 
 ```bicep
-// Initial deployment
-module containerApp './core/host/container-app.bicep' = {
+// Initial deployment — uses fallback image
+module containerApp 'br/public:avm/res/app/container-app:0.18.1' = {
   params: {
-    exists: false  // First-time deployment
-    containerImage: 'myregistry.azurecr.io/myapp:v1.0'
+    containers: [
+      {
+        name: 'main'
+        image: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+        // ... other container properties
+      }
+    ]
     // ... other parameters
   }
 }
 
-// Incremental update - faster deployment
-module containerApp './core/host/container-app.bicep' = {
-  params: {
-    exists: true   // Update existing app
-    containerImage: 'myregistry.azurecr.io/myapp:v1.1'  // New image
-    // ... other parameters remain the same
-  }
-}
+// Incremental update — azd provides the new image via SERVICE_API_IMAGE_NAME
+// The !empty() guard ensures the deployed image is preserved across provisions
 ```
 
 Benefits of incremental updates:

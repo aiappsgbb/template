@@ -5,10 +5,19 @@ applyTo: "infra/**/*.bicep"
 # Bicep Infrastructure Standards
 
 ## Core Rules
-- NEVER inline resource definitions in `main.bicep` — use modules from `infra/core/`
+- NEVER inline resource definitions in `main.bicep` — use **Azure Verified Modules (AVM)** directly from `br/public:avm/...`
+- Do NOT create wrapper modules in `infra/core/` — call AVM modules directly
 - Follow [bicep-deployment-bestpractices.md](../bicep-deployment-bestpractices.md) for template organization
 - Use the `bicep-azd-patterns` skill for parameter, output, and module patterns
 - Use the `azd-deployment` skill for azure.yaml and Container Apps deployment patterns
+
+## AVM Module Usage
+- Reference AVM modules via `br/public:avm/res/<provider>/<resource>:<version>` or `br/public:avm/ptn/<pattern>:<version>`
+- AVM outputs use `.outputs.resourceId` (not `.outputs.id`) and `.outputs.name`
+- AVM Key Vault uses `.outputs.uri` (not `.outputs.endpoint`)
+- AVM Container App uses `environmentResourceId`, `containers`, `ingressExternal`, `ingressTargetPort`
+- AVM RBAC: pass `roleAssignments` array directly to the AVM module instead of separate role assignment resources
+- Check [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/) for latest versions
 
 ## Security (MANDATORY)
 - NEVER use `listKeys()` or output sensitive values
@@ -20,10 +29,10 @@ applyTo: "infra/**/*.bicep"
 ## Template Structure (7 sections in main.bicep)
 1. Metadata — description, author, version
 2. Parameters — with `@description`, `@allowed`, `@minLength` decorators
-3. Variables — `abbrs`, `tags` (must include `azd-env-name`), `resourceToken`
-4. Shared infrastructure — identity, Key Vault, monitoring
-5. Hosting infrastructure — Container Apps Environment, Container Registry
-6. Application modules — Container Apps with `azd-service-name` tags
+3. Variables — `abbrs`, `tags` (must include `azd-env-name`), `resourceToken`, `principalType`
+4. Shared infrastructure — identity (AVM), monitoring (AVM Log Analytics + App Insights)
+5. Hosting infrastructure — Container Apps Environment (AVM), Container Registry (AVM)
+6. Application modules — Container Apps (AVM) with `azd-service-name` tags
 7. Outputs — following `SERVICE_<NAME>_ENDPOINT_URL` naming convention
 
 ## azd Integration

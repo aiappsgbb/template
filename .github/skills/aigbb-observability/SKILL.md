@@ -410,18 +410,27 @@ app.Run();
 ## 7. Bicep — Application Insights Resource
 
 ```bicep
-module monitoring 'core/monitor/monitoring.bicep' = {
-  name: 'monitoring'
+module logAnalyticsWorkspace 'br/public:avm/res/operational-insights/workspace:0.12.0' = {
+  name: 'log-analytics'
+  params: {
+    name: '${abbrs.operationalInsightsWorkspaces}${environmentName}'
+    location: location
+    tags: tags
+  }
+}
+
+module applicationInsights 'br/public:avm/res/insights/component:0.6.0' = {
+  name: 'application-insights'
   params: {
     name: '${abbrs.insightsComponents}${environmentName}'
     location: location
     tags: tags
-    logAnalyticsWorkspaceName: '${abbrs.operationalInsightsWorkspaces}${environmentName}'
+    workspaceResourceId: logAnalyticsWorkspace.outputs.resourceId
   }
 }
 
 // Output for application consumption
-output APPLICATION_INSIGHTS_CONNECTION_STRING string = monitoring.outputs.applicationInsightsConnectionString
+output APPLICATION_INSIGHTS_CONNECTION_STRING string = applicationInsights.outputs.connectionString
 ```
 
 ### Container App Environment Variables

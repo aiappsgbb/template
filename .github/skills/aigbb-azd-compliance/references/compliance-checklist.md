@@ -45,7 +45,7 @@ $params.PSObject.Properties.Name
 Select-String -Path infra/main.bicep -Pattern "azd-env-name"
 
 # Verify azd-service-name tags match azure.yaml services
-Select-String -Path infra/*.bicep -Pattern "azd-service-name" -Recurse
+Select-String -Path infra/main.bicep -Pattern "azd-service-name"
 ```
 
 ### 4. IMAGE_NAME / RESOURCE_EXISTS

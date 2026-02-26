@@ -220,25 +220,53 @@ param apiImageName string = ''
 @description('Whether the api Container App already exists')
 param apiExists bool = false
 
-module api 'core/host/container-app.bicep' = {
+module api 'br/public:avm/res/app/container-app:0.18.1' = {
   name: 'api'
   params: {
-    containerImage: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
-    // pass exists to module for upsert behavior
+    name: '${abbrs.appContainerApps}api-${resourceToken}'
+    tags: union(tags, { 'azd-service-name': 'api' })
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+    containers: [
+      {
+        name: 'main'
+        image: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+        resources: { cpu: json('0.5'), memory: '1Gi' }
+      }
+    ]
+    ingressExternal: true
+    ingressTargetPort: 8000
   }
 }
 ```
 
-### Check 3: AVM container-app-upsert (Recommended)
+### Check 3: Container App Module with Image Guard (Recommended)
 
-Prefer the AVM [`container-app-upsert`](https://github.com/Azure/bicep-registry-modules/tree/main/avm/ptn/azd/container-app-upsert) module which encapsulates the upsert logic:
+Use the AVM Container App module directly with the image guard pattern:
 
 ```bicep
-module api 'br/public:avm/ptn/azd/container-app-upsert:<version>' = {
+module api 'br/public:avm/res/app/container-app:0.18.1' = {
   params: {
-    imageName: !empty(apiImageName) ? apiImageName : ''
-    exists: apiExists
-    // ...
+    name: '${abbrs.appContainerApps}api-${resourceToken}'
+    tags: union(tags, { 'azd-service-name': 'api' })
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+    containers: [
+      {
+        name: 'main'
+        image: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+        resources: { cpu: json('0.5'), memory: '1Gi' }
+        env: [
+          { name: 'AZURE_CLIENT_ID', value: managedIdentity.outputs.clientId }
+        ]
+      }
+    ]
+    ingressExternal: true
+    ingressTargetPort: 8000
+    registries: [
+      {
+        server: '${containerRegistry.outputs.name}.azurecr.io'
+        identity: managedIdentity.outputs.resourceId
+      }
+    ]
   }
 }
 ```
@@ -451,8 +479,9 @@ var tags = {
 }
 
 // ── 4. SHARED INFRASTRUCTURE ─────────────────────────────────
-module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
-  name: 'user-assigned-identity'
+module managedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
+  name: 'managedIdentity'
+  scope: rg
   params: {
     name: '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}'
     location: location
@@ -460,28 +489,38 @@ module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
   }
 }
 
-module monitoring 'core/monitor/monitoring.bicep' = { /* ... */ }
-module keyVault 'core/security/keyvault.bicep' = { /* ... */ }
+module logAnalyticsWorkspace 'br/public:avm/res/operational-insights/workspace:0.12.0' = { /* ... */ }
+module applicationInsights 'br/public:avm/res/insights/component:0.6.0' = { /* ... */ }
+module keyVault 'br/public:avm/res/key-vault/vault:0.13.3' = { /* ... */ }
 
 // ── 5. HOSTING INFRASTRUCTURE ────────────────────────────────
-module containerRegistry 'core/storage/container-registry.bicep' = { /* ... */ }
-module containerAppsEnvironment 'core/host/container-apps-environment.bicep' = { /* ... */ }
+module containerRegistry 'br/public:avm/res/container-registry/registry:0.9.3' = { /* ... */ }
+module containerAppsEnvironment 'br/public:avm/res/app/managed-environment:0.11.3' = { /* ... */ }
 
 // ── 6. APPLICATION MODULES ───────────────────────────────────
-module api 'core/host/container-app.bicep' = {
+module api 'br/public:avm/res/app/container-app:0.18.1' = {
   name: 'api'
+  scope: rg
   params: {
     name: '${abbrs.appContainerApps}api-${resourceToken}'
     tags: union(tags, { 'azd-service-name': 'api' })  // ← REQUIRED for azd
-    containerImage: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
-    // ...
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+    containers: [
+      {
+        name: 'main'
+        image: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+        resources: { cpu: json('0.5'), memory: '1Gi' }
+      }
+    ]
+    ingressExternal: true
+    ingressTargetPort: 8000
   }
 }
 
 // ── 7. OUTPUTS ───────────────────────────────────────────────
 output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
-output AZURE_CLIENT_ID string = userAssignedIdentity.outputs.clientId
+output AZURE_CLIENT_ID string = managedIdentity.outputs.clientId
 output SERVICE_API_ENDPOINT_URL string = api.outputs.fqdn
 output SERVICE_API_NAME string = api.outputs.name
 ```
@@ -607,105 +646,51 @@ class Settings(BaseSettings):
 
 ---
 
-## 12. Container App Module Template
+## 12. Container App — Direct AVM Usage
+
+Use the AVM Container App module (`br/public:avm/res/app/container-app`) directly in `main.bicep`. No wrapper module needed.
 
 ```bicep
-// infra/core/host/container-app.bicep
-@description('Container App name')
-@minLength(1)
-param name string
-
-@description('Location')
-param location string = resourceGroup().location
-
-@description('Resource tags')
-param tags object = {}
-
-@description('Container Apps Environment ID')
-param containerAppsEnvironmentId string
-
-@description('Container Registry name')
-param containerRegistryName string
-
-@description('Container image to deploy')
-param containerImage string
-
-@description('Target port')
-param targetPort int = 80
-
-@description('Environment variables')
-param env array = []
-
-@description('CPU cores')
-param cpu string = '0.5'
-
-@description('Memory')
-param memory string = '1Gi'
-
-@description('Custom domains (empty = preserve Portal-added)')
-param customDomains array = []
-
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
-  name: containerRegistryName
-}
-
-resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
-  name: name
-  location: location
-  tags: tags
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    managedEnvironmentId: containerAppsEnvironmentId
-    configuration: {
-      ingress: {
-        external: true
-        targetPort: targetPort
-        transport: 'auto'
-        allowInsecure: false
-        customDomains: empty(customDomains) ? null : customDomains
-      }
-      registries: [
-        {
-          server: containerRegistry.properties.loginServer
-          identity: 'system' // Use managed identity, not admin credentials
-        }
-      ]
+// In main.bicep — call AVM directly, no infra/core/ wrapper
+module api 'br/public:avm/res/app/container-app:0.18.1' = {
+  name: 'api'
+  scope: rg
+  params: {
+    name: '${abbrs.appContainerApps}api-${resourceToken}'
+    location: location
+    tags: union(tags, { 'azd-service-name': 'api' })  // ← REQUIRED for azd
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+    managedIdentities: {
+      userAssignedResourceIds: [managedIdentity.outputs.resourceId]
     }
-    template: {
-      containers: [
-        {
-          name: 'main'
-          image: containerImage
-          resources: {
-            cpu: json(cpu)
-            memory: memory
-          }
-          env: env
+    containers: [
+      {
+        name: 'main'
+        image: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+        resources: {
+          cpu: json('0.5')
+          memory: '1Gi'
         }
-      ]
-      scale: {
-        minReplicas: 1
-        maxReplicas: 3
-        rules: [
-          {
-            name: 'http-scale-rule'
-            http: {
-              metadata: { concurrentRequests: '100' }
-            }
-          }
+        env: [
+          { name: 'AZURE_CLIENT_ID', value: managedIdentity.outputs.clientId }
+          { name: 'AZURE_OPENAI_ENDPOINT', value: azureOpenAi.outputs.endpoint }
         ]
       }
-    }
+    ]
+    ingressExternal: true
+    ingressTargetPort: 8000
+    registries: [
+      {
+        server: '${containerRegistry.outputs.name}.azurecr.io'
+        identity: managedIdentity.outputs.resourceId  // ✅ Managed identity — NOT admin credentials
+      }
+    ]
   }
 }
 
-output id string = containerApp.id
-output name string = containerApp.name
-output fqdn string = containerApp.properties.configuration.ingress.fqdn
-output uri string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
-output principalId string = containerApp.identity.principalId
+// AVM module outputs use .outputs.resourceId, .outputs.name, .outputs.fqdn
+output SERVICE_API_ENDPOINT_URL string = api.outputs.fqdn
+output SERVICE_API_NAME string = api.outputs.name
 ```
 
 ---
@@ -802,7 +787,7 @@ If all pass, `azd up` should succeed.
 
 ## Reference Files
 
-- **Bicep patterns**: See [references/bicep-patterns.md](references/bicep-patterns.md) for Container Apps modules
+- **Bicep patterns**: See [references/bicep-patterns.md](references/bicep-patterns.md) for AVM-based Container Apps patterns
 - **Troubleshooting**: See [references/troubleshooting.md](references/troubleshooting.md) for common issues
 - **azure.yaml schema**: See [references/azure-yaml-schema.md](references/azure-yaml-schema.md) for full options
 - **Compliance checklist**: See [references/compliance-checklist.md](references/compliance-checklist.md) for validation steps
@@ -812,4 +797,5 @@ If all pass, `azd up` should succeed.
 
 - [azd schema reference](https://learn.microsoft.com/azure/developer/azure-developer-cli/azd-schema)
 - [Container Apps deployment strategies](https://learn.microsoft.com/azure/developer/azure-developer-cli/container-apps-workflows) (IMAGE_NAME / RESOURCE_EXISTS patterns)
-- [AVM container-app-upsert module](https://github.com/Azure/bicep-registry-modules/tree/main/avm/ptn/azd/container-app-upsert) (recommended upsert pattern)
+- [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/) — all infrastructure modules
+- [AVM Bicep Registry](https://github.com/Azure/bicep-registry-modules) — source code and docs for all AVM modules

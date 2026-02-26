@@ -94,20 +94,35 @@ param <serviceName>Exists bool = false
 ### 3. Add Container App Module (main.bicep)
 
 ```bicep
-module <serviceName> 'core/host/container-app.bicep' = {
+module <serviceName> 'br/public:avm/res/app/container-app:0.18.1' = {
   name: '<service-name>'
   params: {
     name: '${abbrs.appContainerApps}<service-name>-${resourceToken}'
     tags: union(tags, { 'azd-service-name': '<service-name>' })
-    containerImage: !empty(<serviceName>ImageName) ? <serviceName>ImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
-    containerAppsEnvironmentId: containerAppsEnvironment.outputs.id
-    containerRegistryName: containerRegistry.outputs.name
-    userAssignedIdentityId: userAssignedIdentity.outputs.id
-    environmentVariables: [
-      { name: 'AZURE_CLIENT_ID', value: userAssignedIdentity.outputs.clientId }
-      { name: 'APPLICATION_INSIGHTS_CONNECTION_STRING', value: monitoring.outputs.applicationInsightsConnectionString }
-      // Add service-specific endpoints (NEVER API keys)
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+    containers: [
+      {
+        name: 'main'
+        image: !empty(<serviceName>ImageName) ? <serviceName>ImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+        resources: { cpu: json('0.5'), memory: '1Gi' }
+        env: [
+          { name: 'AZURE_CLIENT_ID', value: managedIdentity.outputs.clientId }
+          { name: 'APPLICATION_INSIGHTS_CONNECTION_STRING', value: applicationInsights.outputs.connectionString }
+          // Add service-specific endpoints (NEVER API keys)
+        ]
+      }
     ]
+    ingressExternal: true
+    ingressTargetPort: 80
+    registries: [
+      {
+        server: containerRegistry.outputs.loginServer
+        identity: managedIdentity.outputs.resourceId
+      }
+    ]
+    managedIdentities: {
+      userAssignedResourceIds: [managedIdentity.outputs.resourceId]
+    }
   }
 }
 ```

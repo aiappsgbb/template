@@ -109,8 +109,8 @@ environmentVariables: [
 
 ```bicep
 // ✅ CORRECT - Always create User Assigned Managed Identity
-module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
-  name: 'user-assigned-identity'
+module managedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
+  name: 'managed-identity'
   params: {
     name: '${abbrs.managedIdentityUserAssignedIdentities}${environmentName}'
     location: location
@@ -118,12 +118,22 @@ module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
   }
 }
 
-// ✅ CORRECT - Assign to Container Apps
-module containerApp 'core/host/container-app.bicep' = {
+// ✅ CORRECT - Assign to Container Apps via AVM
+module containerApp 'br/public:avm/res/app/container-app:0.18.1' = {
   name: 'container-app'
   params: {
-    userAssignedIdentityId: userAssignedIdentity.outputs.id
-    managedIdentityPrincipalId: userAssignedIdentity.outputs.principalId
+    managedIdentities: {
+      userAssignedResourceIds: [managedIdentity.outputs.resourceId]
+    }
+    containers: [
+      {
+        name: 'main'
+        image: containerImage
+        env: [
+          { name: 'AZURE_CLIENT_ID', value: managedIdentity.outputs.clientId }
+        ]
+      }
+    ]
     // ...
   }
 }

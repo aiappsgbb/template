@@ -619,44 +619,37 @@ Update `infra/main.bicep` with Agent Framework container app:
 
 ```bicep
 // ${input:appName} Microsoft Agent Framework Application
-module ${input:appName}App 'core/host/container-app.bicep' = {
+module ${input:appName}App 'br/public:avm/res/app/container-app:0.18.1' = {
   name: '${input:appName}-agent-app'
   params: {
     name: '${abbrs.appContainerApps}${input:appName}-${environmentName}'
     location: location
-    tags: tags
-    containerAppsEnvironmentId: containerAppsEnvironment.outputs.id
-    containerRegistryName: containerRegistry.outputs.name
-    userAssignedIdentityId: userAssignedIdentity.outputs.id
-    managedIdentityPrincipalId: principalId
-    githubActions: githubActions
-    containerImage: ${input:appName}AppImage
-    containerPort: 80
-    environmentVariables: [
+    tags: union(tags, { 'azd-service-name': '${input:appName}' })
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+    containers: [
       {
-        name: 'AZURE_CLIENT_ID'
-        value: userAssignedIdentity.outputs.clientId
-      }
-      {
-        name: 'AZURE_OPENAI_ENDPOINT'
-        value: openAi.outputs.endpoint
-      }
-      {
-        name: 'APPLICATION_INSIGHTS_CONNECTION_STRING'
-        value: monitoring.outputs.applicationInsightsConnectionString
-      }
-      {
-        name: 'AGENT_TYPE'
-        value: 'chat'  // or 'workflow' or 'custom'
-      }
-      {
-        name: 'AGENT_LOG_LEVEL'
-        value: 'INFO'
+        name: 'main'
+        image: ${input:appName}AppImage
+        resources: { cpu: json('2'), memory: '4Gi' }
+        env: [
+          { name: 'AZURE_CLIENT_ID', value: managedIdentity.outputs.clientId }
+          { name: 'AZURE_OPENAI_ENDPOINT', value: openAi.outputs.endpoint }
+          { name: 'APPLICATION_INSIGHTS_CONNECTION_STRING', value: applicationInsights.outputs.connectionString }
+          { name: 'AGENT_TYPE', value: 'chat' }
+          { name: 'AGENT_LOG_LEVEL', value: 'INFO' }
+        ]
       }
     ]
-    resources: {
-      cpu: 2
-      memory: '4Gi'
+    ingressExternal: true
+    ingressTargetPort: 80
+    registries: [
+      {
+        server: containerRegistry.outputs.loginServer
+        identity: managedIdentity.outputs.resourceId
+      }
+    ]
+    managedIdentities: {
+      userAssignedResourceIds: [managedIdentity.outputs.resourceId]
     }
   }
 }

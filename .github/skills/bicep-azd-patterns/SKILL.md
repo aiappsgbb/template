@@ -1,11 +1,11 @@
 ---
 name: bicep-azd-patterns
-description: Bicep infrastructure templates and patterns for Azure Developer CLI (azd) projects. Use when writing main.bicep, creating modules, configuring Container Apps in Bicep, managing parameters, outputs, tags, RBAC assignments, or aligning environment variables between Bicep and application code. Triggers on Bicep, main.bicep, parameters.json, azd tags, RBAC, Container Apps Bicep, module, output.
+description: Bicep infrastructure templates and patterns for Azure Developer CLI (azd) projects using Azure Verified Modules (AVM). Use when writing main.bicep, calling AVM modules directly, configuring Container Apps in Bicep, managing parameters, outputs, tags, RBAC assignments, or aligning environment variables between Bicep and application code. Triggers on Bicep, main.bicep, parameters.json, azd tags, RBAC, Container Apps Bicep, AVM, module, output.
 ---
 
 # Bicep Templates for Azure Developer CLI (azd)
 
-Patterns for writing Bicep infrastructure that integrates cleanly with `azd provision`, `azd deploy`, and `azd down`.
+Patterns for writing Bicep infrastructure using **Azure Verified Modules (AVM)** directly from the public Bicep registry (`br/public:avm/...`). No wrapper modules in `infra/core/` — call AVM modules directly in `main.bicep`.
 
 ## main.bicep Organization (7 sections)
 
@@ -42,8 +42,9 @@ var tags = {
 }
 
 // ── 4. SHARED INFRASTRUCTURE ─────────────────────────────────
-module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
-  name: 'user-assigned-identity'
+module managedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
+  name: 'managedIdentity'
+  scope: rg
   params: {
     name: '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}'
     location: location
@@ -51,28 +52,41 @@ module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
   }
 }
 
-module monitoring 'core/monitor/monitoring.bicep' = { /* ... */ }
-module keyVault 'core/security/keyvault.bicep' = { /* ... */ }
+module logAnalyticsWorkspace 'br/public:avm/res/operational-insights/workspace:0.12.0' = { /* ... */ }
+module applicationInsights 'br/public:avm/res/insights/component:0.6.0' = { /* ... */ }
+module keyVault 'br/public:avm/res/key-vault/vault:0.13.3' = { /* ... */ }
 
 // ── 5. HOSTING INFRASTRUCTURE ────────────────────────────────
-module containerRegistry 'core/storage/container-registry.bicep' = { /* ... */ }
-module containerAppsEnvironment 'core/host/container-apps-environment.bicep' = { /* ... */ }
+module containerRegistry 'br/public:avm/res/container-registry/registry:0.9.3' = { /* ... */ }
+module containerAppsEnvironment 'br/public:avm/res/app/managed-environment:0.11.3' = { /* ... */ }
 
 // ── 6. APPLICATION MODULES ───────────────────────────────────
-module api 'core/host/container-app.bicep' = {
+module api 'br/public:avm/res/app/container-app:0.18.1' = {
   name: 'api'
+  scope: rg
   params: {
     name: '${abbrs.appContainerApps}api-${resourceToken}'
     tags: union(tags, { 'azd-service-name': 'api' })  // ← REQUIRED for azd
-    containerImage: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
-    // ...
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+    containers: [
+      {
+        name: 'main'
+        image: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+        resources: { cpu: json('0.5'), memory: '1Gi' }
+        env: [
+          { name: 'AZURE_CLIENT_ID', value: managedIdentity.outputs.clientId }
+        ]
+      }
+    ]
+    ingressExternal: true
+    ingressTargetPort: 8000
   }
 }
 
 // ── 7. OUTPUTS ───────────────────────────────────────────────
 output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
-output AZURE_CLIENT_ID string = userAssignedIdentity.outputs.clientId
+output AZURE_CLIENT_ID string = managedIdentity.outputs.clientId
 output SERVICE_API_ENDPOINT_URL string = api.outputs.fqdn
 output SERVICE_API_NAME string = api.outputs.name
 ```
@@ -132,10 +146,22 @@ For each service with `host: containerapp` in azure.yaml, azd manages two variab
 param apiImageName string = ''
 param apiExists bool = false
 
-module api 'core/host/container-app.bicep' = {
+module api 'br/public:avm/res/app/container-app:0.18.1' = {
+  name: 'api'
+  scope: rg
   params: {
-    containerImage: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
-    // pass exists to module if it supports upsert behavior
+    name: '${abbrs.appContainerApps}api-${resourceToken}'
+    tags: union(tags, { 'azd-service-name': 'api' })
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+    containers: [
+      {
+        name: 'main'
+        image: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+        resources: { cpu: json('0.5'), memory: '1Gi' }
+      }
+    ]
+    ingressExternal: true
+    ingressTargetPort: 8000
   }
 }
 ```
@@ -172,7 +198,7 @@ output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 
 // Identity
-output AZURE_CLIENT_ID string = userAssignedIdentity.outputs.clientId
+output AZURE_CLIENT_ID string = managedIdentity.outputs.clientId
 
 // Per-service endpoints (pattern: SERVICE_<NAME>_<PROPERTY>)
 output SERVICE_API_ENDPOINT_URL string = api.outputs.fqdn
@@ -180,7 +206,7 @@ output SERVICE_API_NAME string = api.outputs.name
 output SERVICE_WEB_ENDPOINT_URL string = web.outputs.fqdn
 
 // Infrastructure endpoints (consumed by app config)
-output AZURE_KEY_VAULT_ENDPOINT string = keyVault.outputs.endpoint
+output AZURE_KEY_VAULT_ENDPOINT string = keyVault.outputs.uri
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
 ```
 
@@ -214,58 +240,77 @@ resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = i
 
 **Never use `Contributor` or `Owner`** when a specific role suffices.
 
+## AVM Module Reference
+
+All infrastructure uses Azure Verified Modules directly from `br/public:avm/...`:
+
+| Resource | AVM Module | Version |
+|----------|-----------|--------|
+| Managed Identity | `br/public:avm/res/managed-identity/user-assigned-identity` | 0.4.1 |
+| Log Analytics | `br/public:avm/res/operational-insights/workspace` | 0.12.0 |
+| App Insights | `br/public:avm/res/insights/component` | 0.6.0 |
+| Key Vault | `br/public:avm/res/key-vault/vault` | 0.13.3 |
+| Container Registry | `br/public:avm/res/container-registry/registry` | 0.9.3 |
+| Container Apps Env | `br/public:avm/res/app/managed-environment` | 0.11.3 |
+| Container App | `br/public:avm/res/app/container-app` | 0.18.1 |
+| Azure OpenAI | `br/public:avm/res/cognitive-services/account` | 0.10.1 |
+| AI Search | `br/public:avm/res/search/search-service` | 0.11.1 |
+| Cosmos DB | `br/public:avm/res/document-db/database-account` | 0.16.0 |
+| Storage Account | `br/public:avm/res/storage/storage-account` | 0.27.0 |
+
+Docs: [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/)
+
 ## Module Template
 
+Use AVM modules directly — no wrapper modules needed:
+
 ```bicep
-// infra/core/<category>/<service>.bicep
-targetScope = 'resourceGroup'
-
-@description('Resource name')
-@minLength(1)
-param name string
-
-@description('Location for resources')
-param location string = resourceGroup().location
-
-@description('Resource tags')
-param tags object = {}
-
-@description('Managed Identity Principal ID for RBAC')
-param managedIdentityPrincipalId string = ''
-
-resource svc 'Microsoft.SomeService/resource@2024-01-01' = {
-  name: name
-  location: location
-  tags: tags
-  properties: { /* ... */ }
-}
-
-// Conditional RBAC
-resource rbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(managedIdentityPrincipalId)) {
-  name: guid(svc.id, managedIdentityPrincipalId, 'RoleName')
-  scope: svc
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '<role-id>')
-    principalId: managedIdentityPrincipalId
-    principalType: 'ServicePrincipal'
+// Direct AVM call in main.bicep
+module svc 'br/public:avm/res/<provider>/<resource>:<version>' = {
+  name: 'svc'
+  scope: rg
+  params: {
+    name: '${abbrs.prefix}${resourceToken}'
+    location: location
+    tags: tags
+    roleAssignments: !empty(managedIdentity.outputs.principalId) ? [
+      {
+        principalId: managedIdentity.outputs.principalId
+        roleDefinitionIdOrName: 'Role Name'
+        principalType: principalType
+      }
+    ] : []
   }
 }
 
-output id string = svc.id
-output name string = svc.name
+// AVM outputs follow: .outputs.resourceId, .outputs.name
+output SVC_ID string = svc.outputs.resourceId
+output SVC_NAME string = svc.outputs.name
 ```
 
 ## Environment Variable Alignment
 
-Container Apps env vars **must match** the application's configuration class:
+Container Apps env vars **must match** the application's configuration class.
+
+With AVM Container App module, env vars go inside the `containers` array:
 
 ```bicep
-// Bicep
-environmentVariables: [
-  { name: 'AZURE_CLIENT_ID', value: identity.outputs.clientId }
-  { name: 'AZURE_OPENAI_ENDPOINT', value: openAi.outputs.endpoint }
-  { name: 'APPLICATION_INSIGHTS_CONNECTION_STRING', value: monitoring.outputs.appInsightsConnectionString }
-]
+// Bicep — AVM Container App module
+module api 'br/public:avm/res/app/container-app:0.18.1' = {
+  params: {
+    containers: [
+      {
+        name: 'main'
+        image: apiImage
+        env: [
+          { name: 'AZURE_CLIENT_ID', value: managedIdentity.outputs.clientId }
+          { name: 'AZURE_OPENAI_ENDPOINT', value: azureOpenAi.outputs.endpoint }
+          { name: 'APPLICATION_INSIGHTS_CONNECTION_STRING', value: applicationInsights.outputs.connectionString }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 ```python
@@ -293,3 +338,7 @@ class Settings(BaseSettings):
 | `principalId` empty in CI | RBAC creation fails → guard with `if (!empty(principalId))` |
 | Hardcoded location | Use `resourceGroup().location` or parameter |
 | No `AZURE_CLIENT_ID` env var | Managed identity auth fails at runtime |
+| Using `infra/core/` wrappers | Call AVM modules directly via `br/public:avm/...` |
+| Using `.outputs.id` on AVM modules | AVM uses `.outputs.resourceId` for resource IDs |
+| Using `.outputs.endpoint` on AVM Key Vault | AVM Key Vault uses `.outputs.uri` |
+| Pinning old AVM versions | Check [AVM registry](https://azure.github.io/Azure-Verified-Modules/) for latest |

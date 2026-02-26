@@ -59,8 +59,8 @@ var tags = {
 }
 
 // ── SHARED INFRASTRUCTURE ────────────────────────────────────
-module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
-  name: 'user-assigned-identity'
+module managedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
+  name: 'managed-identity'
   params: {
     name: '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}'
     location: location
@@ -68,27 +68,36 @@ module userAssignedIdentity 'core/security/user-assigned-identity.bicep' = {
   }
 }
 
-module monitoring 'core/monitor/monitoring.bicep' = {
-  name: 'monitoring'
+module logAnalyticsWorkspace 'br/public:avm/res/operational-insights/workspace:0.12.0' = {
+  name: 'log-analytics'
   params: {
-    name: '${abbrs.insightsComponents}${resourceToken}'
+    name: '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
     location: location
     tags: tags
   }
 }
 
-module keyVault 'core/security/keyvault.bicep' = {
+module applicationInsights 'br/public:avm/res/insights/component:0.6.0' = {
+  name: 'application-insights'
+  params: {
+    name: '${abbrs.insightsComponents}${resourceToken}'
+    location: location
+    tags: tags
+    workspaceResourceId: logAnalyticsWorkspace.outputs.resourceId
+  }
+}
+
+module keyVault 'br/public:avm/res/key-vault/vault:0.13.3' = {
   name: 'keyvault'
   params: {
     name: '${abbrs.keyVaultVaults}${resourceToken}'
     location: location
     tags: tags
-    principalId: principalId
   }
 }
 
 // ── HOSTING INFRASTRUCTURE ───────────────────────────────────
-module containerRegistry 'core/storage/container-registry.bicep' = {
+module containerRegistry 'br/public:avm/res/container-registry/registry:0.9.3' = {
   name: 'container-registry'
   params: {
     name: '${abbrs.containerRegistryRegistries}${resourceToken}'
@@ -97,47 +106,88 @@ module containerRegistry 'core/storage/container-registry.bicep' = {
   }
 }
 
-module containerAppsEnvironment 'core/host/container-apps-environment.bicep' = {
+// Reference deployed Log Analytics workspace for shared key
+resource logWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
+  name: logAnalyticsWorkspace.outputs.name
+}
+
+module containerAppsEnvironment 'br/public:avm/res/app/managed-environment:0.11.3' = {
   name: 'container-apps-environment'
   params: {
     name: '${abbrs.appManagedEnvironments}${resourceToken}'
     location: location
     tags: tags
-    logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
+    appLogsConfiguration: {
+      destination: 'log-analytics'
+      logAnalyticsConfiguration: {
+        customerId: logWorkspace.properties.customerId
+        sharedKey: logWorkspace.listKeys().primarySharedKey
+      }
+    }
   }
 }
 
 // ── APPLICATION MODULES ──────────────────────────────────────
-module api 'core/host/container-app.bicep' = {
+module api 'br/public:avm/res/app/container-app:0.18.1' = {
   name: 'api'
   params: {
     name: '${abbrs.appContainerApps}api-${resourceToken}'
     location: location
     tags: union(tags, { 'azd-service-name': 'api' })  // ← REQUIRED for azd
-    containerAppsEnvironmentId: containerAppsEnvironment.outputs.id
-    containerRegistryName: containerRegistry.outputs.name
-    containerImage: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
-    targetPort: 8000
-    env: [
-      { name: 'AZURE_CLIENT_ID', value: userAssignedIdentity.outputs.clientId }
-      { name: 'AZURE_OPENAI_ENDPOINT', value: azureOpenAiEndpoint }
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+    containers: [
+      {
+        name: 'main'
+        image: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+        resources: { cpu: json('0.5'), memory: '1Gi' }
+        env: [
+          { name: 'AZURE_CLIENT_ID', value: managedIdentity.outputs.clientId }
+          { name: 'AZURE_OPENAI_ENDPOINT', value: azureOpenAiEndpoint }
+        ]
+      }
     ]
+    ingressExternal: true
+    ingressTargetPort: 8000
+    registries: [
+      {
+        server: containerRegistry.outputs.loginServer
+        identity: managedIdentity.outputs.resourceId
+      }
+    ]
+    managedIdentities: {
+      userAssignedResourceIds: [managedIdentity.outputs.resourceId]
+    }
   }
 }
 
-module web 'core/host/container-app.bicep' = {
+module web 'br/public:avm/res/app/container-app:0.18.1' = {
   name: 'web'
   params: {
     name: '${abbrs.appContainerApps}web-${resourceToken}'
     location: location
     tags: union(tags, { 'azd-service-name': 'web' })  // ← REQUIRED for azd
-    containerAppsEnvironmentId: containerAppsEnvironment.outputs.id
-    containerRegistryName: containerRegistry.outputs.name
-    containerImage: !empty(webImageName) ? webImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
-    targetPort: 80
-    env: [
-      { name: 'BACKEND_URL', value: 'http://${abbrs.appContainerApps}api-${resourceToken}' }
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+    containers: [
+      {
+        name: 'main'
+        image: !empty(webImageName) ? webImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+        resources: { cpu: json('0.5'), memory: '1Gi' }
+        env: [
+          { name: 'BACKEND_URL', value: 'http://${abbrs.appContainerApps}api-${resourceToken}' }
+        ]
+      }
     ]
+    ingressExternal: true
+    ingressTargetPort: 80
+    registries: [
+      {
+        server: containerRegistry.outputs.loginServer
+        identity: managedIdentity.outputs.resourceId
+      }
+    ]
+    managedIdentities: {
+      userAssignedResourceIds: [managedIdentity.outputs.resourceId]
+    }
   }
 }
 
@@ -147,10 +197,10 @@ output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 
 // Identity
-output AZURE_CLIENT_ID string = userAssignedIdentity.outputs.clientId
+output AZURE_CLIENT_ID string = managedIdentity.outputs.clientId
 
 // Infrastructure
-output AZURE_KEY_VAULT_ENDPOINT string = keyVault.outputs.endpoint
+output AZURE_KEY_VAULT_ENDPOINT string = keyVault.outputs.uri
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
 
 // Per-service (pattern: SERVICE_<NAME>_<PROPERTY>)
@@ -162,152 +212,89 @@ output SERVICE_WEB_NAME string = web.outputs.name
 
 ---
 
-## Container Apps Environment Module
+## Container Apps Environment (AVM Pattern)
 
 ```bicep
-// infra/core/host/container-apps-environment.bicep
-@description('Name of the Container Apps environment')
-param name string
+// No wrapper module needed — call AVM directly from main.bicep
 
-@description('Location')
-param location string = resourceGroup().location
-
-@description('Tags')
-param tags object = {}
-
-@description('Log Analytics Workspace ID')
-param logAnalyticsWorkspaceId string
-
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
-  name: last(split(logAnalyticsWorkspaceId, '/'))
+// Reference deployed Log Analytics workspace for shared key
+resource logWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
+  name: logAnalyticsWorkspace.outputs.name
 }
 
-resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-05-01' = {
-  name: name
-  location: location
-  tags: tags
-  properties: {
+module containerAppsEnvironment 'br/public:avm/res/app/managed-environment:0.11.3' = {
+  name: 'container-apps-environment'
+  params: {
+    name: '${abbrs.appManagedEnvironments}${resourceToken}'
+    location: location
+    tags: tags
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
-        customerId: logAnalyticsWorkspace.properties.customerId
-        sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
+        customerId: logWorkspace.properties.customerId
+        sharedKey: logWorkspace.listKeys().primarySharedKey
       }
     }
   }
 }
 
-output id string = containerAppsEnvironment.id
-output name string = containerAppsEnvironment.name
+// Key AVM outputs:
+// .outputs.resourceId  — use for Container App environmentResourceId
+// .outputs.name        — environment name
 ```
 
 ---
 
-## Container App Module
+## Container App (AVM Pattern)
 
 ```bicep
-// infra/core/host/container-app.bicep
-@description('Container App name')
-@minLength(1)
-param name string
+// No wrapper module needed — call AVM directly from main.bicep
+module api 'br/public:avm/res/app/container-app:0.18.1' = {
+  name: 'api'
+  params: {
+    name: '${abbrs.appContainerApps}api-${resourceToken}'
+    location: location
+    tags: union(tags, { 'azd-service-name': 'api' })  // ← REQUIRED for azd
 
-@description('Location')
-param location string = resourceGroup().location
+    // Link to Container Apps Environment
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
 
-@description('Tags — must include azd-service-name for azd discovery')
-param tags object = {}
-
-@description('Container Apps Environment ID')
-param containerAppsEnvironmentId string
-
-@description('Container Registry name')
-param containerRegistryName string
-
-@description('Container image to deploy')
-param containerImage string
-
-@description('Target port')
-param targetPort int = 80
-
-@description('Environment variables')
-param env array = []
-
-@description('CPU cores')
-param cpu string = '0.5'
-
-@description('Memory')
-param memory string = '1Gi'
-
-@description('Minimum replicas')
-param minReplicas int = 1
-
-@description('Maximum replicas')
-param maxReplicas int = 3
-
-@description('Custom domains (empty = preserve Portal-added)')
-param customDomains array = []
-
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
-  name: containerRegistryName
-}
-
-resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
-  name: name
-  location: location
-  tags: tags
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    managedEnvironmentId: containerAppsEnvironmentId
-    configuration: {
-      ingress: {
-        external: true
-        targetPort: targetPort
-        transport: 'auto'
-        allowInsecure: false
-        customDomains: empty(customDomains) ? null : customDomains
-      }
-      registries: [
-        {
-          server: containerRegistry.properties.loginServer
-          identity: 'system'  // ✅ Managed identity — NOT admin credentials
-        }
-      ]
-    }
-    template: {
-      containers: [
-        {
-          name: 'main'
-          image: containerImage
-          resources: {
-            cpu: json(cpu)
-            memory: memory
-          }
-          env: env
-        }
-      ]
-      scale: {
-        minReplicas: minReplicas
-        maxReplicas: maxReplicas
-        rules: [
-          {
-            name: 'http-scale-rule'
-            http: {
-              metadata: { concurrentRequests: '100' }
-            }
-          }
+    // Container definition (replaces template.containers in raw resource)
+    containers: [
+      {
+        name: 'main'
+        image: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+        resources: { cpu: json('0.5'), memory: '1Gi' }
+        env: [
+          { name: 'AZURE_CLIENT_ID', value: managedIdentity.outputs.clientId }
+          { name: 'PORT', value: '8000' }
         ]
       }
+    ]
+
+    // Ingress (replaces properties.configuration.ingress)
+    ingressExternal: true
+    ingressTargetPort: 8000
+
+    // ACR pull via managed identity (replaces properties.configuration.registries)
+    registries: [
+      {
+        server: containerRegistry.outputs.loginServer
+        identity: managedIdentity.outputs.resourceId
+      }
+    ]
+
+    // Identity (replaces identity block)
+    managedIdentities: {
+      userAssignedResourceIds: [managedIdentity.outputs.resourceId]
     }
   }
 }
 
-output id string = containerApp.id
-output name string = containerApp.name
-output fqdn string = containerApp.properties.configuration.ingress.fqdn
-output uri string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
-output principalId string = containerApp.identity.principalId
+// Key AVM outputs:
+// .outputs.resourceId  — Container App resource ID
+// .outputs.name        — Container App name (use for SERVICE_<NAME>_NAME)
+// .outputs.fqdn        — Ingress FQDN (use for SERVICE_<NAME>_ENDPOINT_URL)
 ```
 
 ---
@@ -346,7 +333,7 @@ env: [
   { name: 'PORT', value: '8000' }
 
   // Dynamic — from parameters or other modules
-  { name: 'AZURE_CLIENT_ID', value: identity.outputs.clientId }
+  { name: 'AZURE_CLIENT_ID', value: managedIdentity.outputs.clientId }
   { name: 'AZURE_OPENAI_ENDPOINT', value: azureOpenAiEndpoint }
 
   // Internal service discovery (HTTP, not HTTPS)
@@ -401,9 +388,15 @@ param apiExists bool = false
 ### 3. Image Guard in Module Call
 
 ```bicep
-module api 'core/host/container-app.bicep' = {
+module api 'br/public:avm/res/app/container-app:0.18.1' = {
   params: {
-    containerImage: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+    containers: [
+      {
+        name: 'main'
+        image: !empty(apiImageName) ? apiImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
+        // ... other container properties
+      }
+    ]
   }
 }
 ```

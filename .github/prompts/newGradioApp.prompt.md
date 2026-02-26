@@ -394,66 +394,54 @@ services:
 
 Update the `infra/main.bicep` file to include a new container app module for the Gradio application:
 
-- Add a new module declaration using the `infra/core/host/container-app.bicep` template
+- Add a new module declaration using the AVM `br/public:avm/res/app/container-app:0.18.1` module
 - Configure the module with:
   - Unique name for the container app (based on app name and environment)
   - Location parameter reference
-  - Tags from the main template
-  - Container Apps Environment ID reference
-  - Container Registry name reference
-  - User Assigned Identity ID for ACR access
-  - Managed Identity Principal ID for RBAC
-  - GitHub Actions parameter for deployment context
+  - Tags from the main template (including `azd-service-name`)
+  - Container Apps Environment resource ID (`environmentResourceId`)
+  - Container definition via `containers` array
+  - Managed identity via `managedIdentities` and `registries`
   - Container image parameter (will be updated during deployment)
   - Environment variables specific to the Gradio application
-  - Resource allocation (CPU and memory)
-  - Container port (80 for Azure Container Apps)
+  - Resource allocation (CPU and memory) inside container definition
+  - Ingress configuration (`ingressExternal`, `ingressTargetPort`)
 
 Example module configuration:
 ```bicep
 // ${input:appName} Gradio Application
-module ${input:appName}App 'core/host/container-app.bicep' = {
+module ${input:appName}App 'br/public:avm/res/app/container-app:0.18.1' = {
   name: '${input:appName}-app'
   params: {
     name: '${abbrs.appContainerApps}${input:appName}-${environmentName}'
     location: location
-    tags: tags
-    containerAppsEnvironmentId: containerAppsEnvironment.outputs.id
-    containerRegistryName: containerRegistry.outputs.name
-    userAssignedIdentityId: userAssignedIdentity.outputs.id
-    managedIdentityPrincipalId: principalId
-    githubActions: githubActions
-    containerImage: ${input:appName}AppImage
-    containerPort: 80
-    environmentVariables: [
+    tags: union(tags, { 'azd-service-name': '${input:appName}' })
+    environmentResourceId: containerAppsEnvironment.outputs.resourceId
+    containers: [
       {
-        name: 'AZURE_CLIENT_ID'
-        value: userAssignedIdentity.outputs.clientId
-      }
-      {
-        name: 'APPLICATION_INSIGHTS_CONNECTION_STRING'
-        value: monitoring.outputs.applicationInsightsConnectionString
-      }
-      {
-        name: 'AZURE_KEY_VAULT_ENDPOINT'
-        value: keyVault.outputs.endpoint
-      }
-      {
-        name: 'GRADIO_SERVER_NAME'
-        value: '0.0.0.0'
-      }
-      {
-        name: 'GRADIO_SERVER_PORT'
-        value: '80'
-      }
-      {
-        name: 'LOG_LEVEL'
-        value: 'INFO'
+        name: 'main'
+        image: ${input:appName}AppImage
+        resources: { cpu: json('2'), memory: '4Gi' }
+        env: [
+          { name: 'AZURE_CLIENT_ID', value: managedIdentity.outputs.clientId }
+          { name: 'APPLICATION_INSIGHTS_CONNECTION_STRING', value: applicationInsights.outputs.connectionString }
+          { name: 'AZURE_KEY_VAULT_ENDPOINT', value: keyVault.outputs.uri }
+          { name: 'GRADIO_SERVER_NAME', value: '0.0.0.0' }
+          { name: 'GRADIO_SERVER_PORT', value: '80' }
+          { name: 'LOG_LEVEL', value: 'INFO' }
+        ]
       }
     ]
-    resources: {
-      cpu: 2
-      memory: '4Gi'
+    ingressExternal: true
+    ingressTargetPort: 80
+    registries: [
+      {
+        server: containerRegistry.outputs.loginServer
+        identity: managedIdentity.outputs.resourceId
+      }
+    ]
+    managedIdentities: {
+      userAssignedResourceIds: [managedIdentity.outputs.resourceId]
     }
   }
 }
