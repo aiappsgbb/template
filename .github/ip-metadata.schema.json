@@ -184,6 +184,11 @@
           "type": "string",
           "format": "uri", 
           "description": "Link to demo or walkthrough"
+        },
+        "slides": {
+          "type": "string",
+          "format": "uri",
+          "description": "Link to pitch deck or slide presentation"
         }
       }
     },
