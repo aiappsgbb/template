@@ -189,6 +189,11 @@
           "type": "string",
           "format": "uri",
           "description": "Link to pitch deck or slide presentation"
+        },
+        "video": {
+          "type": "string",
+          "format": "uri",
+          "description": "Link to video recording or demo walkthrough"
         }
       }
     },
